@@ -9,13 +9,13 @@
   "pets": [
     {
       "id": 1,
-      "name": "Пушок",
+      "name": "ÐÑÑÐ¾Ðº",
       "breed": "A2",
       "age": "5",
       "type": "newfoundland",
       "gender": "male",
       "status": "breeding",
-      "description": "Лучший друг!",
+      "description": "ÐÑÑÑÐ¸Ð¹ Ð´ÑÑÐ³!",
       "photos": [
         null
       ],
