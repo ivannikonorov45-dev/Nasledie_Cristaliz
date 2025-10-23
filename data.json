@@ -6,5 +6,21 @@
       "email": "admin@pitomnik.ru"
     }
   },
-  "pets": []
+  "pets": [
+    {
+      "id": 1,
+      "name": "Пушок",
+      "breed": "A2",
+      "age": "5",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "Лучший друг!",
+      "photos": [
+        null
+      ],
+      "videos": [],
+      "icon": "fas fa-dog"
+    }
+  ]
 }
