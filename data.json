@@ -1,0 +1,10 @@
+{
+  "users": {
+    "Admin": {
+      "password": "TatyanaKiseleva1231",
+      "role": "admin",
+      "email": "admin@pitomnik.ru"
+    }
+  },
+  "pets": []
+}
