@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Питомник "Наследие кристализ" - Многопородный питомник</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Модальное окно авторизации -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="auth-tabs">
+                <button class="tab-btn active" data-tab="login">Вход</button>
+                <button class="tab-btn" data-tab="register">Регистрация</button>
+            </div>
+            
+            <!-- Форма входа -->
+            <div id="loginForm" class="auth-form active">
+                <h2>Вход в систему</h2>
+                <form id="loginFormElement">
+                    <div class="form-group">
+                        <label for="loginUsername">Логин:</label>
+                        <input type="text" id="loginUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="loginPassword">Пароль:</label>
+                        <input type="password" id="loginPassword" name="password" required>
+                    </div>
+                    <div class="form-group checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="rememberMe" name="rememberMe">
+                            <span class="checkmark"></span>
+                            Запомнить меня
+                        </label>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Войти</button>
+                </form>
+            </div>
+            
+            <!-- Форма регистрации -->
+            <div id="registerForm" class="auth-form">
+                <h2>Регистрация</h2>
+                <form id="registerFormElement">
+                    <div class="form-group">
+                        <label for="regUsername">Логин:</label>
+                        <input type="text" id="regUsername" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Пароль:</label>
+                        <input type="password" id="regPassword" name="password" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regConfirmPassword">Подтвердите пароль:</label>
+                        <input type="password" id="regConfirmPassword" name="confirmPassword" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email:</label>
+                        <input type="email" id="regEmail" name="email" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-crown"></i>
+                <span>Наследие кристализ</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#home" class="nav-link">Главная</a></li>
+                <li><a href="#about" class="nav-link">О нас</a></li>
+                <li><a href="#dogs" class="nav-link">Наши собаки</a></li>
+                <li><a href="#puppies" class="nav-link">Щенки</a></li>
+                <li><a href="#graduates" class="nav-link">Выпускники</a></li>
+                <li><a href="#achievements" class="nav-link">Наши достижения</a></li>
+                <li><a href="#memory" class="nav-link">Наша память</a></li>
+                <li><a href="#videos" class="nav-link">Видео</a></li>
+                <li><a href="#contact" class="nav-link">Контакты</a></li>
+            </ul>
+            <div class="user-controls">
+                <span id="userInfo" class="user-info"></span>
+                <button id="loginBtn" class="btn btn-small">Войти</button>
+                <button id="logoutBtn" class="btn btn-small" style="display: none;">Выйти</button>
+            </div>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Главная секция -->
+    <section id="home" class="hero">
+        <div class="hero-content">
+            <h1>Питомник "Наследие кристализ"</h1>
+            <p>Многопородный питомник со стажем более 25 лет. Мы специализируемся на разведении пород: Ньюфаундленд, Бигль, Ши-тцу и Пудель.</p>
+            <div class="hero-buttons">
+                <a href="#dogs" class="btn btn-primary">Наши собаки</a>
+                <a href="#contact" class="btn btn-secondary">Связаться с нами</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="hero-placeholder">
+                <i class="fas fa-crown"></i>
+            </div>
+        </div>
+    </section>
+
+    <!-- Секция о нас -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2>О нашем питомнике</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>Питомник "Наследие кристализ" - многопородный питомник со стажем более 25 лет. Мы специализируемся на разведении и выращивании собак пород: Ньюфаундленд, Бигль, Ши-тцу и Пудель.</p>
+                    <p>Наша миссия - сохранение и улучшение породных качеств, воспитание здоровых, красивых и психически устойчивых собак с отличными рабочими качествами.</p>
+                    <div class="stats">
+                        <div class="stat">
+                            <h3>25+</h3>
+                            <p>Лет опыта</p>
+                        </div>
+                        <div class="stat">
+                            <h3>4</h3>
+                            <p>Породы</p>
+                        </div>
+                        <div class="stat">
+                            <h3>100%</h3>
+                            <p>Качество</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Наши собаки -->
+    <section id="dogs" class="pets">
+        <div class="container">
+            <div class="pets-header">
+                <h2>Наши собаки</h2>
+                <p class="section-subtitle">Племенные собаки нашего питомника</p>
+                <button id="addPetBtn" class="btn btn-primary admin-only" style="display: none;">
+                    <i class="fas fa-plus"></i> Добавить собаку
+                </button>
+            </div>
+            
+            <div class="pets-filter">
+                <button class="filter-btn active" data-filter="all">Все</button>
+                <button class="filter-btn" data-filter="newfoundland">Ньюфаундленд</button>
+                <button class="filter-btn" data-filter="beagle">Бигль</button>
+                <button class="filter-btn" data-filter="shih-tzu">Ши-тцу</button>
+                <button class="filter-btn" data-filter="poodle">Пудель</button>
+            </div>
+
+            <div class="pets-grid" id="petsGrid">
+                <!-- Собаки будут добавлены через JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Щенки -->
+    <section id="puppies" class="pets">
+        <div class="container">
+            <h2>Щенки</h2>
+            <p class="section-subtitle">Доступные щенки для продажи</p>
+            <button id="addPuppyBtn" class="btn btn-primary admin-only" style="display: none;">
+                <i class="fas fa-plus"></i> Добавить щенка
+            </button>
+            <div class="pets-grid" id="puppiesGrid">
+                <!-- Щенки будут добавлены через JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Выпускники -->
+    <section id="graduates" class="pets">
+        <div class="container">
+            <h2>Выпускники</h2>
+            <p class="section-subtitle">Наши собаки в новых семьях</p>
+            <button id="addGraduateBtn" class="btn btn-primary admin-only" style="display: none;">
+                <i class="fas fa-plus"></i> Добавить выпускника
+            </button>
+            <div class="pets-grid" id="graduatesGrid">
+                <!-- Выпускники будут добавлены через JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Наши достижения -->
+    <section id="achievements" class="about">
+        <div class="container">
+            <h2>Наши достижения</h2>
+            <div class="about-content">
+                <div class="about-text">
+                    <p>За годы работы наш питомник достиг значительных успехов в разведении собак. Наши собаки участвуют в выставках, получают высокие оценки экспертов и завоевывают призовые места.</p>
+                    <div class="stats">
+                        <div class="stat">
+                            <h3>50+</h3>
+                            <p>Выставок</p>
+                        </div>
+                        <div class="stat">
+                            <h3>100+</h3>
+                            <p>Наград</p>
+                        </div>
+                        <div class="stat">
+                            <h3>15+</h3>
+                            <p>Чемпионов</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Наша память -->
+    <section id="memory" class="pets">
+        <div class="container">
+            <h2>Наша память</h2>
+            <p class="section-subtitle">Собаки, которые навсегда остались в наших сердцах</p>
+            <button id="addMemoryBtn" class="btn btn-primary admin-only" style="display: none;">
+                <i class="fas fa-plus"></i> Добавить запись
+            </button>
+            <div class="pets-grid" id="memoryGrid">
+                <!-- Памятные собаки будут добавлены через JavaScript -->
+            </div>
+        </div>
+    </section>
+
+    <!-- Отдельная вкладка для видео -->
+    <section id="videos" class="pets">
+        <div class="container">
+            <div class="pets-header">
+                <h2>Видео</h2>
+                <p class="section-subtitle">Видео с участием наших собак</p>
+                <button id="addVideoBtn" class="btn btn-primary admin-only" style="display: none;">
+                    <i class="fas fa-plus"></i> Добавить видео
+                </button>
+            </div>
+            <div class="pets-grid" id="videosGrid"></div>
+        </div>
+    </section>
+
+    <!-- Контакты -->
+    <section id="contact" class="contact">
+        <div class="container">
+            <h2>Свяжитесь с нами</h2>
+            <div class="contact-content">
+                <div class="contact-info">
+                    <div class="contact-item">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <h3>Адрес</h3>
+                            <p>Россия, Оренбургская обл., г. Орск</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-phone"></i>
+                        <div>
+                            <h3>Телефон</h3>
+                            <p>8 905 899-37-67 — Татьяна</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-envelope"></i>
+                        <div>
+                            <h3>Email</h3>
+                            <p>tatyana02_76@mail.ru</p>
+                        </div>
+                    </div>
+                    <div class="contact-item">
+                        <i class="fas fa-clock"></i>
+                        <div>
+                            <h3>Часы работы</h3>
+                            <p>Пн-Вс: 9:00 - 18:00</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-form">
+                    <h3>Напишите нам</h3>
+                    <form>
+                        <div class="form-group">
+                            <input type="text" placeholder="Ваше имя" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="email" placeholder="Email" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" placeholder="Телефон">
+                        </div>
+                        <div class="form-group">
+                            <textarea placeholder="Сообщение" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Отправить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Футер -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>Питомник "Наследие кристализ"</h3>
+                    <p>Многопородный питомник со стажем более 25 лет</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Быстрые ссылки</h4>
+                    <ul>
+                        <li><a href="#home">Главная</a></li>
+                        <li><a href="#about">О нас</a></li>
+                        <li><a href="#dogs">Наши собаки</a></li>
+                        <li><a href="#puppies">Щенки</a></li>
+                        <li><a href="#graduates">Выпускники</a></li>
+                        <li><a href="#achievements">Достижения</a></li>
+                        <li><a href="#memory">Память</a></li>
+                        <li><a href="#videos">Видео</a></li>
+                        <li><a href="#contact">Контакты</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Контакты</h4>
+                    <p><i class="fas fa-phone"></i> 8 905 899-37-67 — Татьяна</p>
+                    <p><i class="fas fa-envelope"></i> tatyana02_76@mail.ru</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 Питомник "Наследие кристализ". Все права защищены.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Модальное окно для добавления/редактирования питомца -->
+    <div id="petModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="modalTitle">Добавить питомца</h2>
+            <form id="petForm">
+                <input type="hidden" id="petId">
+                <div class="form-group">
+                    <label for="petName">Имя:</label>
+                    <input type="text" id="petName" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="petBreed">Помёты:</label>
+                    <input type="text" id="petBreed" name="breed" required>
+                </div>
+                <div class="form-group">
+                    <label for="petAge">Возраст:</label>
+                    <input type="text" id="petAge" name="age" required>
+                </div>
+                <div class="form-group">
+                    <label for="petType">Помёты:</label>
+                    <select id="petType" name="type" required>
+                        <option value="newfoundland">Ньюфаундленд</option>
+                        <option value="beagle">Бигль</option>
+                        <option value="shih-tzu">Ши-тцу</option>
+                        <option value="poodle">Пудель</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="petGender">Пол:</label>
+                    <select id="petGender" name="gender" required>
+                        <option value="male">Кобель</option>
+                        <option value="female">Сука</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="petStatus">Статус:</label>
+                    <select id="petStatus" name="status" required>
+                        <option value="breeding">Племенной</option>
+                        <option value="puppy">Щенок</option>
+                        <option value="graduate">Выпускник</option>
+                        <option value="memory">Память</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="petDescription">Описание:</label>
+                    <textarea id="petDescription" name="description" rows="3" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="petPhotos">Фотографии (можно несколько):</label>
+                    <input type="file" id="petPhotos" name="photos" accept="image/*" multiple>
+                    <div id="photoPreview" class="photo-preview"></div>
+                </div>
+                <div class="form-group">
+                    <label for="petVideos">Видео (можно несколько):</label>
+                    <input type="file" id="petVideos" name="videos" accept="video/*" multiple>
+                    <div id="videoPreview" class="photo-preview"></div>
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                    <button type="button" class="btn btn-secondary" onclick="closePetModal()">Отмена</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно просмотра карточки -->
+    <div id="viewModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <span class="close">&times;</span>
+            <div id="viewContent"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <!-- GitHub Storage для глобального хранения данных -->
+    <script src="github-storage.js?v=20250122"></script>
+    <script>
+        // ПРОВЕРКА: Скрипт загружается
+        console.log('HTML загружен, начинаем загрузку script.js');
+        console.log('Время загрузки:', new Date().toISOString());
+    </script>
+    <script src="script.js?v=20250122_debug_save"></script>
+    <script>
+        // ПРОВЕРКА: После загрузки script.js
+        console.log('script.js загружен, проверяем функции...');
+        setTimeout(() => {
+            console.log('Проверяем кнопку "Войти":', !!document.getElementById('loginBtn'));
+            console.log('Проверяем DOMContentLoaded:', document.readyState);
+            console.log('Проверяем GitHub Storage:', typeof GitHubStorage !== 'undefined');
+        }, 1000);
+    </script>
+</body>
+</html>
