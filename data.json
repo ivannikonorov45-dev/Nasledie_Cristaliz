@@ -6,22 +6,5 @@
       "email": "admin@pitomnik.ru"
     }
   },
-  "pets": [
-    {
-      "id": 7,
-      "name": "1231231",
-      "breed": "A2",
-      "age": "400",
-      "type": "newfoundland",
-      "gender": "male",
-      "status": "breeding",
-      "description": "1",
-      "photos": [
-        null,
-        null
-      ],
-      "videos": [],
-      "icon": "fas fa-dog"
-    }
-  ]
+  "pets": []
 }
