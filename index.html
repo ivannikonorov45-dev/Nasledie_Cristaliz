@@ -416,20 +416,30 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <!-- GitHub Storage для глобального хранения данных -->
-    <script src="photos-working-2025.js?v=20250122_fixed_error"></script>
+    <script src="photos-ultimate-2025.js?v=20250122_ultimate_fix"></script>
     <script>
         // ПРОВЕРКА: Скрипт загружается
         console.log('HTML загружен, начинаем загрузку script.js');
         console.log('Время загрузки:', new Date().toISOString());
-        console.log('Версия HTML: 20250122_FIXED_ERROR');
+        console.log('Версия HTML: 20250122_ULTIMATE_FIX');
         
-        // Принудительная очистка кэша
+        // АГРЕССИВНАЯ ОЧИСТКА КЭША
         if ('caches' in window) {
             caches.keys().then(function(names) {
                 for (let name of names) {
                     caches.delete(name);
                 }
-                console.log('Кэш очищен');
+                console.log('🔥 КЭШ ОЧИЩЕН АГРЕССИВНО!');
+            });
+        }
+        
+        // ДОПОЛНИТЕЛЬНАЯ ОЧИСТКА КЭША
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+                console.log('🔥 SERVICE WORKER ОЧИЩЕН!');
             });
         }
         
