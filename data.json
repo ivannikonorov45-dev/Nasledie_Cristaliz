@@ -22,6 +22,22 @@
       ],
       "videos": [],
       "icon": "fas fa-dog"
+    },
+    {
+      "id": 3,
+      "name": "Пушок",
+      "breed": "A2",
+      "age": "1 годик",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "Лучший из лучших друзей человека!",
+      "photos": [
+        null,
+        null
+      ],
+      "videos": [],
+      "icon": "fas fa-dog"
     }
   ]
 }
