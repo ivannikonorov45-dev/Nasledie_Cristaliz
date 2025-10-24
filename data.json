@@ -4,6 +4,11 @@
       "password": "TatyanaKiseleva1231",
       "role": "admin",
       "email": "admin@pitomnik.ru"
+    },
+    "Blebik1": {
+      "password": "e6E-4wW-AdD-apL",
+      "role": "guest",
+      "email": "1231231231@mail.ru"
     }
   },
   "pets": [
