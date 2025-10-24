@@ -1351,9 +1351,24 @@ function createPetCard(pet){
     let mediaContent='';
     const firstPhoto = Array.isArray(pet.photos) && pet.photos[0] ? pet.photos[0] : (pet.photo || null);
     const hasVideo = Array.isArray(pet.videos) ? pet.videos.length>0 : !!pet.video;
+    
+    // Отладочная информация
+    console.log(`Карточка ${pet.name}:`, {
+        photos: pet.photos,
+        firstPhoto: firstPhoto,
+        hasVideo: hasVideo,
+        videos: pet.videos
+    });
+    
     if (hasVideo){ const v = Array.isArray(pet.videos)?pet.videos[0]:pet.video; mediaContent = `<video src="${v}" controls></video>`; }
-    else if (firstPhoto){ mediaContent = `<img src="${firstPhoto}" alt="${pet.name}">`; }
-    else { mediaContent = `<i class="${pet.icon}"></i>`; }
+    else if (firstPhoto && firstPhoto !== null && firstPhoto !== 'null'){ 
+        console.log(`Используем фото для ${pet.name}:`, firstPhoto);
+        mediaContent = `<img src="${firstPhoto}" alt="${pet.name}" onerror="console.error('Ошибка загрузки изображения:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';"><i class="${pet.icon}" style="display:none;"></i>`; 
+    }
+    else { 
+        console.log(`Нет фото для ${pet.name}, используем иконку`);
+        mediaContent = `<i class="${pet.icon}"></i>`; 
+    }
 
     const genderIcon = pet.gender==='male'?'♂':'♀';
     const statusText = pet.status==='breeding'?'Племенной': pet.status==='puppy'?'Щенок': pet.status==='graduate'?'Выпускник':'Память';
