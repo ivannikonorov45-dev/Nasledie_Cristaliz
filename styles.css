@@ -1009,3 +1009,69 @@ body {
 .notification-info {
     background: #2196F3 !important;
 }
+
+/* Информационное сообщение о регистрации */
+.registration-notice {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    padding: 20px;
+    margin: 30px 0;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+}
+
+.notice-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    color: white;
+    text-align: center;
+}
+
+.notice-content i {
+    font-size: 24px;
+    color: #ffd700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.notice-content p {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    letter-spacing: 0.5px;
+}
+
+/* Анимация для уведомления */
+.registration-notice {
+    animation: slideInUp 0.6s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Адаптивность для уведомления */
+@media (max-width: 768px) {
+    .notice-content {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .notice-content p {
+        font-size: 16px;
+    }
+    
+    .notice-content i {
+        font-size: 20px;
+    }
+}

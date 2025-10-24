@@ -161,6 +161,14 @@
                 <button class="filter-btn" data-filter="poodle">Пудель</button>
             </div>
 
+            <!-- Информационное сообщение для гостей -->
+            <div class="registration-notice">
+                <div class="notice-content">
+                    <i class="fas fa-info-circle"></i>
+                    <p>Для просмотра питомцев на нашем сайте обязательно зарегистрируйтесь!</p>
+                </div>
+            </div>
+
             <div class="pets-grid" id="petsGrid">
                 <!-- Собаки будут добавлены через JavaScript -->
             </div>
@@ -421,7 +429,7 @@
         // ПРОВЕРКА: Скрипт загружается
         console.log('HTML загружен, начинаем загрузку script.js');
         console.log('Время загрузки:', new Date().toISOString());
-        console.log('Версия HTML: 20250122_FINAL_SOLUTION');
+        console.log('Версия HTML: 20250122_REGISTRATION_NOTICE');
         
         // АГРЕССИВНАЯ ОЧИСТКА КЭША
         if ('caches' in window) {
@@ -447,7 +455,7 @@
         const timestamp = Date.now();
         console.log('Временная метка для кэш-бастинга:', timestamp);
     </script>
-    <script src="script.js?v=20250122_visible_for_all"></script>
+    <script src="script.js?v=20250122_registration_notice"></script>
     <script>
         // ПРОВЕРКА: После загрузки script.js
         console.log('script.js загружен, проверяем функции...');
