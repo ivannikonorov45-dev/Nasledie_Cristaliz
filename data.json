@@ -8,19 +8,6 @@
   },
   "pets": [
     {
-      "id": 4,
-      "name": "231321",
-      "breed": "3123213",
-      "age": "1321321312321",
-      "type": "newfoundland",
-      "gender": "male",
-      "status": "breeding",
-      "description": "321312312313",
-      "photos": [],
-      "videos": [],
-      "icon": "fas fa-dog"
-    },
-    {
       "id": 5,
       "name": "Кася",
       "breed": "12312312",
