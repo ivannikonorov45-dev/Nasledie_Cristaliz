@@ -98,6 +98,15 @@ class GitHubStorage {
     // Загрузить файл (фото/видео) в репозиторий
     async uploadFile(file, filename) {
         try {
+            console.log('GitHub uploadFile вызван с параметрами:', {
+                file: file,
+                filename: filename,
+                fileType: typeof file,
+                fileConstructor: file.constructor.name,
+                isBlob: file instanceof Blob,
+                isFile: file instanceof File
+            });
+            
             const reader = new FileReader();
             return new Promise((resolve, reject) => {
                 reader.onload = async () => {

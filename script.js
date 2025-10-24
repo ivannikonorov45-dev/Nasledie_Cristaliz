@@ -1168,14 +1168,20 @@ async function savePet(){
                 const file = accumulatedPhotos[i];
                 console.log(`Обрабатываем фото ${i+1}/${accumulatedPhotos.length}:`, file.name);
                 try {
+                    console.log(`Обрабатываем файл ${i+1}:`, file.name, 'тип:', file.type, 'размер:', file.size);
                     const resized = await resizeImage(file, 1200, 1200, file.type.includes('png')?'image/png':'image/jpeg', 0.85);
+                    console.log(`Файл ${i+1} обработан, результат:`, resized, 'тип результата:', typeof resized, 'конструктор:', resized.constructor.name);
+                    
                     const extension = (file.type.split('/')[1] || 'jpg').replace(/\s+/g, ''); // Убираем пробелы
                     const path = `pets/images/${Date.now()}_${Math.random().toString(36).slice(2)}_${i}.${extension}`;
+                    console.log(`Загружаем файл ${i+1} по пути:`, path);
+                    
                     const url = await store.uploadFile(resized, path);
                     petData.photos.push(url);
                     console.log(`Фото ${i+1} сохранено:`, url);
                 } catch (error) {
-                    console.warn(`Ошибка загрузки фото ${i+1}:`, error.message);
+                    console.error(`Ошибка загрузки фото ${i+1}:`, error);
+                    console.error('Стек ошибки:', error.stack);
                     // Пропускаем проблемное фото
                 }
             }
