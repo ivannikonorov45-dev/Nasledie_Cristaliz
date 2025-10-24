@@ -137,7 +137,10 @@ class GitHubStorage {
 
                         if (response.ok) {
                             const result = await response.json();
-                            resolve(result.download_url);
+                            // Преобразуем API URL в raw URL для прямого доступа к файлу
+                            const rawUrl = `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/${filename}`;
+                            console.log('Файл загружен, raw URL:', rawUrl);
+                            resolve(rawUrl);
                         } else {
                             const errorText = await response.text();
                             console.error('Ошибка загрузки файла на GitHub:', errorText);
