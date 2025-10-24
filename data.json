@@ -58,6 +58,22 @@
       "photos": [],
       "videos": [],
       "icon": "fas fa-dog"
+    },
+    {
+      "id": 5,
+      "name": "Кася",
+      "breed": "12312312",
+      "age": "3123123123",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "2131312321",
+      "photos": [
+        null,
+        null
+      ],
+      "videos": [],
+      "icon": "fas fa-dog"
     }
   ]
 }
