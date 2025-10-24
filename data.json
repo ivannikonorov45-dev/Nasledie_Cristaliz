@@ -74,22 +74,6 @@
       ],
       "videos": [],
       "icon": "fas fa-dog"
-    },
-    {
-      "id": 6,
-      "name": "Солнце",
-      "breed": "213123",
-      "age": "12321321312",
-      "type": "newfoundland",
-      "gender": "male",
-      "status": "breeding",
-      "description": "3123123131",
-      "photos": [
-        null,
-        null
-      ],
-      "videos": [],
-      "icon": "fas fa-dog"
     }
   ]
 }
