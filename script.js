@@ -670,6 +670,9 @@ function checkSavedSession(){
         const userKey = Object.keys(db.users||{}).find(u => u.toLowerCase() === session.username.toLowerCase());
         const user = userKey ? db.getUser(userKey) : null;
         if (user){ currentUser = userKey; isAdmin = user.role==='admin'; updateUserInterface(); }
+    } else {
+        // Для гостевых пользователей тоже показываем карточки
+        updateUserInterface();
     }
 }
 
@@ -730,6 +733,11 @@ function setupAuth(){
             isAdmin = user.role==='admin'; 
             sessionManager.saveSession(userKey, rememberMe); 
             updateUserInterface(); 
+            // Принудительно перезагружаем карточки после входа
+            setTimeout(() => {
+                loadPets();
+                console.log('Карточки перезагружены после входа пользователя');
+            }, 100);
             document.getElementById('loginModal').style.display='none'; 
             loginForm.reset();
             alert(`Добро пожаловать, ${userKey}! Роль: ${isAdmin?'Администратор':'Гость'}`); 
