@@ -71,19 +71,6 @@
       "photos": [],
       "videos": [],
       "icon": "fas fa-dog"
-    },
-    {
-      "id": 6,
-      "name": "2",
-      "breed": "1",
-      "age": "13",
-      "type": "newfoundland",
-      "gender": "male",
-      "status": "breeding",
-      "description": "3213123",
-      "photos": [],
-      "videos": [],
-      "icon": "fas fa-dog"
     }
   ]
 }
