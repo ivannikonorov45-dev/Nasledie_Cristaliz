@@ -40,22 +40,6 @@
       "icon": "fas fa-dog"
     },
     {
-      "id": 4,
-      "name": "1",
-      "breed": "1",
-      "age": "1",
-      "type": "newfoundland",
-      "gender": "male",
-      "status": "breeding",
-      "description": "1",
-      "photos": [
-        null,
-        null
-      ],
-      "videos": [],
-      "icon": "fas fa-dog"
-    },
-    {
       "id": 5,
       "name": "Кастория",
       "breed": "A2",
