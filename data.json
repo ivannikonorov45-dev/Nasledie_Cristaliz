@@ -8,19 +8,6 @@
   },
   "pets": [
     {
-      "id": 1,
-      "name": "1",
-      "breed": "A2",
-      "age": "5",
-      "type": "newfoundland",
-      "gender": "male",
-      "status": "breeding",
-      "description": "1",
-      "photos": [],
-      "videos": [],
-      "icon": "fas fa-dog"
-    },
-    {
       "id": 3,
       "name": "52",
       "breed": "52",
