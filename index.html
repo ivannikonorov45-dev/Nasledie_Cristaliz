@@ -416,13 +416,24 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <!-- GitHub Storage для глобального хранения данных -->
-    <script src="github-storage.js?v=20250122_debug_upload"></script>
+    <script src="github-storage.js?v=20250122_debug_upload_v2"></script>
     <script>
         // ПРОВЕРКА: Скрипт загружается
         console.log('HTML загружен, начинаем загрузку script.js');
         console.log('Время загрузки:', new Date().toISOString());
+        console.log('Версия HTML: 20250122_debug_upload_v2');
+        
+        // Принудительная очистка кэша
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                for (let name of names) {
+                    caches.delete(name);
+                }
+                console.log('Кэш очищен');
+            });
+        }
     </script>
-    <script src="script.js?v=20250122_debug_upload"></script>
+    <script src="script.js?v=20250122_debug_upload_v2"></script>
     <script>
         // ПРОВЕРКА: После загрузки script.js
         console.log('script.js загружен, проверяем функции...');
