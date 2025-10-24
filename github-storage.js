@@ -158,9 +158,6 @@ class GitHubStorage {
                     } catch (error) {
                         reject(error);
                     }
-                } catch (error) {
-                    reject(error);
-                }
             });
         } catch (error) {
             console.error('Ошибка загрузки файла:', error);

@@ -416,12 +416,12 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
     <!-- GitHub Storage для глобального хранения данных -->
-    <script src="github-storage.js?v=20250122_fix_filereader"></script>
+    <script src="github-storage.js?v=20250122_syntax_fix"></script>
     <script>
         // ПРОВЕРКА: Скрипт загружается
         console.log('HTML загружен, начинаем загрузку script.js');
         console.log('Время загрузки:', new Date().toISOString());
-        console.log('Версия HTML: 20250122_fix_filereader');
+        console.log('Версия HTML: 20250122_syntax_fix');
         
         // Принудительная очистка кэша
         if ('caches' in window) {
@@ -432,6 +432,10 @@
                 console.log('Кэш очищен');
             });
         }
+        
+        // Дополнительная очистка кэша для скриптов
+        const timestamp = Date.now();
+        console.log('Временная метка для кэш-бастинга:', timestamp);
     </script>
     <script src="script.js?v=20250122_debug_upload_v2"></script>
     <script>
