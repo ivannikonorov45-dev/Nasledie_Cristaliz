@@ -103,6 +103,24 @@ class GitHubStorage {
                 reader.onload = async () => {
                     try {
                         const base64 = reader.result.split(',')[1];
+                        
+                        // Проверяем, существует ли файл (для получения sha)
+                        let sha = null;
+                        try {
+                            const checkResponse = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filename}`, {
+                                headers: {
+                                    'Authorization': `token ${this.token}`,
+                                    'Accept': 'application/vnd.github.v3+json'
+                                }
+                            });
+                            if (checkResponse.ok) {
+                                const fileData = await checkResponse.json();
+                                sha = fileData.sha;
+                            }
+                        } catch (e) {
+                            // Файл не существует, создаем новый
+                        }
+
                         const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filename}`, {
                             method: 'PUT',
                             headers: {
@@ -112,7 +130,8 @@ class GitHubStorage {
                             },
                             body: JSON.stringify({
                                 message: `Загрузка файла ${filename}`,
-                                content: base64
+                                content: base64,
+                                sha: sha
                             })
                         });
 
@@ -120,7 +139,9 @@ class GitHubStorage {
                             const result = await response.json();
                             resolve(result.download_url);
                         } else {
-                            reject(new Error('Ошибка загрузки файла'));
+                            const errorText = await response.text();
+                            console.error('Ошибка загрузки файла на GitHub:', errorText);
+                            reject(new Error(errorText));
                         }
                     } catch (error) {
                         reject(error);
