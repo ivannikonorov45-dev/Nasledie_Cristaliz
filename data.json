@@ -32,6 +32,19 @@
       "photos": [],
       "videos": [],
       "icon": "fas fa-dog"
+    },
+    {
+      "id": 3,
+      "name": "52",
+      "breed": "52",
+      "age": "52",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "52",
+      "photos": [],
+      "videos": [],
+      "icon": "fas fa-dog"
     }
   ]
 }
