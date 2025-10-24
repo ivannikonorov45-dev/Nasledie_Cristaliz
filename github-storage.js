@@ -82,7 +82,8 @@ class GitHubStorage {
 
             if (response.ok) {
                 const fileData = await response.json();
-                const content = atob(fileData.content);
+                // Правильное декодирование с поддержкой русских символов
+                const content = decodeURIComponent(escape(atob(fileData.content)));
                 return JSON.parse(content);
             } else {
                 console.log('Файл данных не найден, создаем новый');
