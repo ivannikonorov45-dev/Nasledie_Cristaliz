@@ -107,11 +107,11 @@ class GitHubStorage {
                 isFile: file instanceof File
             });
             
-            const reader = new FileReader();
-            return new Promise((resolve, reject) => {
-                reader.onload = async () => {
-                    try {
-                        const base64 = reader.result.split(',')[1];
+            // Конвертируем Blob в base64 напрямую
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
                         
                         // Проверяем, существует ли файл (для получения sha)
                         let sha = null;
@@ -158,8 +158,9 @@ class GitHubStorage {
                     } catch (error) {
                         reject(error);
                     }
-                };
-                reader.readAsDataURL(file);
+                } catch (error) {
+                    reject(error);
+                }
             });
         } catch (error) {
             console.error('Ошибка загрузки файла:', error);
