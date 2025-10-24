@@ -103,7 +103,7 @@ class GitHubStorage {
                 reader.onload = async () => {
                     try {
                         const base64 = reader.result.split(',')[1];
-                        const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/uploads/${filename}`, {
+                        const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/${filename}`, {
                             method: 'PUT',
                             headers: {
                                 'Authorization': `token ${this.token}`,
