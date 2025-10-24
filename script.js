@@ -88,7 +88,7 @@ class Store {
         }
         return await this.local.savePets(pets); 
     }
-    async uploadFile(path, fileOrBlob) { 
+    async uploadFile(fileOrBlob, path) { 
         if (this._useGitHub()) {
             return await this.github.uploadFile(fileOrBlob, path);
         }
