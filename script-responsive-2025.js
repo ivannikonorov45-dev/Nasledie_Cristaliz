@@ -61,11 +61,18 @@ class Store {
     }
     
     _useGitHub() {
+        // Используем GitHub для чтения данных всегда (даже без токена)
+        // Токен нужен только для записи
+        return this.useCloud && this.github;
+    }
+    
+    _canWriteToGitHub() {
+        // Проверяем, можем ли мы писать в GitHub (нужен токен)
         return this.useCloud && this.github && this.github.token;
     }
     
     async saveData(data) {
-        if (this._useGitHub()) {
+        if (this._canWriteToGitHub()) {
             return await this.github.saveData(data);
         }
         return await this.local.saveData(data);
@@ -79,7 +86,7 @@ class Store {
     }
     
     async uploadFile(fileOrBlob, path) { 
-        if (this._useGitHub()) {
+        if (this._canWriteToGitHub()) {
             return await this.github.uploadFile(fileOrBlob, path);
         }
         return await this.local.uploadFile(path, fileOrBlob); 
@@ -239,11 +246,20 @@ class Database {
     
     async load() {
         try {
+            console.log('🔄 Начинаем загрузку данных...');
+            console.log('Store._useGitHub():', store._useGitHub());
+            console.log('Store.github:', !!store.github);
+            console.log('Store.github.token:', !!store.github?.token);
+            
             const data = await store.loadData();
+            console.log('📥 Данные получены от store.loadData():', data);
+            
             this.users = data.users || {};
             this.petsData = data.pets || [];
             
-            console.log('Данные загружены. Пользователей:', Object.keys(this.users).length, 'Питомцев:', this.petsData.length);
+            console.log('✅ Данные загружены. Пользователей:', Object.keys(this.users).length, 'Питомцев:', this.petsData.length);
+            console.log('📊 Содержимое this.users:', this.users);
+            console.log('📊 Содержимое this.petsData:', this.petsData);
             
             // Принудительно создаем/обновляем админский аккаунт
             console.log('=== ПРОВЕРКА АДМИНСКОГО АККАУНТА ===');
@@ -947,6 +963,13 @@ async function deletePet(petId){ if(!isAdmin) return alert('Нет прав'); i
 
 function loadPets(){
     console.log('=== ЗАГРУЗКА ПИТОМЦЕВ ===');
+    console.log('🔍 Проверяем состояние db:', {
+        users: db.users,
+        petsData: db.petsData,
+        usersCount: Object.keys(db.users || {}).length,
+        petsCount: (db.petsData || []).length
+    });
+    
     const petsGrid=document.getElementById('petsGrid'); 
     const puppiesGrid=document.getElementById('puppiesGrid'); 
     const graduatesGrid=document.getElementById('graduatesGrid'); 
@@ -968,8 +991,14 @@ function loadPets(){
     if (videosGrid) videosGrid.innerHTML='';
     
     const pets = db.getAllPets();
-    console.log('Всего питомцев в базе:', pets.length);
-    console.log('Питомцы:', pets);
+    console.log('📊 Всего питомцев в базе:', pets.length);
+    console.log('📊 Питомцы:', pets);
+    
+    if (pets.length === 0) {
+        console.warn('⚠️ НЕТ ПИТОМЦЕВ В БАЗЕ ДАННЫХ!');
+        console.log('🔍 Проверяем db.petsData:', db.petsData);
+        console.log('🔍 Проверяем db.users:', db.users);
+    }
     
     pets.forEach((pet, index) => {
         console.log(`Обрабатываем питомца ${index + 1}:`, pet);

@@ -24,6 +24,11 @@ class GitHubStorage {
 
     async loadData() {
         try {
+            console.log('🚀 GitHubStorage.loadData() вызван');
+            console.log('🔑 Токен доступен:', !!this.token);
+            console.log('👤 Владелец репозитория:', this.owner);
+            console.log('📁 Репозиторий:', this.repo);
+            
             // Сначала пытаемся загрузить через API с токеном (если есть)
             if (this.token) {
                 const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/data.json`, {
@@ -43,14 +48,19 @@ class GitHubStorage {
             
             // Если токена нет или API не сработал, пытаемся загрузить как публичный файл
             console.log('🔄 Пытаемся загрузить данные как публичный файл...');
+            console.log('🔗 URL для публичного файла:', `https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/data.json`);
+            
             const publicResponse = await fetch(`https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/data.json`);
+            console.log('📡 Ответ публичного API:', publicResponse.status, publicResponse.statusText);
             
             if (publicResponse.ok) {
                 const content = await publicResponse.text();
-                console.log('✅ Данные загружены как публичный файл');
+                console.log('✅ Данные загружены как публичный файл, размер:', content.length, 'символов');
+                console.log('📄 Первые 200 символов:', content.substring(0, 200));
                 return JSON.parse(content);
             } else {
-                console.log('📝 Файл данных не найден, создаем новый');
+                console.log('📝 Файл данных не найден на GitHub, создаем новый');
+                console.log('🔍 Статус ответа:', publicResponse.status, publicResponse.statusText);
                 return { users: {}, pets: [] };
             }
         } catch (error) {
