@@ -1106,12 +1106,46 @@ body {
         padding: 10px 15px;
     }
     
+    .nav-container {
+        height: 60px;
+    }
+    
+    /* Уменьшаем логотип на мобильных */
+    .nav-logo {
+        font-size: 1.1rem;
+        margin-right: 15px;
+    }
+    
+    .nav-logo i {
+        font-size: 1.3rem;
+        margin-right: 6px;
+    }
+    
+    .nav-logo span {
+        font-size: 1rem;
+    }
+    
+    /* Улучшаем кнопки входа */
+    .user-controls {
+        gap: 8px;
+    }
+    
+    .user-info {
+        font-size: 0.8rem;
+        margin-right: 8px;
+    }
+    
+    .btn-small {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
     .nav-menu {
         position: fixed;
-        top: 70px;
+        top: 60px;
         left: -100%;
         width: 100%;
-        height: calc(100vh - 70px);
+        height: calc(100vh - 60px);
         background: rgba(255, 255, 255, 0.98);
         backdrop-filter: blur(10px);
         flex-direction: column;
@@ -1150,7 +1184,7 @@ body {
     
     /* Секции */
     .hero {
-        padding: 80px 0 60px;
+        padding: 70px 0 60px;
         text-align: center;
     }
     
@@ -1266,6 +1300,40 @@ body {
 @media (max-width: 480px) {
     .container {
         padding: 0 10px;
+    }
+    
+    /* Еще более компактная навигация */
+    .nav-container {
+        height: 55px;
+        padding: 0 10px;
+    }
+    
+    .nav-logo {
+        font-size: 0.9rem;
+        margin-right: 10px;
+    }
+    
+    .nav-logo i {
+        font-size: 1.1rem;
+        margin-right: 4px;
+    }
+    
+    .nav-logo span {
+        font-size: 0.9rem;
+    }
+    
+    .user-controls {
+        gap: 5px;
+    }
+    
+    .user-info {
+        font-size: 0.7rem;
+        margin-right: 5px;
+    }
+    
+    .btn-small {
+        padding: 5px 10px;
+        font-size: 0.7rem;
     }
     
     .hero h1 {
