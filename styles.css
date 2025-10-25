@@ -1060,6 +1060,25 @@ body {
     }
 }
 
+/* Новые стили для фильтров по полу */
+.filter-group {
+    margin-bottom: 20px;
+}
+
+.filter-group h4 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #333;
+    text-align: center;
+}
+
+.filter-group .filter-btn {
+    margin: 5px;
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
 /* Адаптивность для уведомления */
 @media (max-width: 768px) {
     .notice-content {
@@ -1073,5 +1092,227 @@ body {
     
     .notice-content i {
         font-size: 20px;
+    }
+}
+
+/* АДАПТИВНЫЕ СТИЛИ ДЛЯ МОБИЛЬНЫХ УСТРОЙСТВ */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+    
+    /* Навигация */
+    .navbar {
+        padding: 10px 15px;
+    }
+    
+    .nav-menu {
+        position: fixed;
+        top: 70px;
+        left: -100%;
+        width: 100%;
+        height: calc(100vh - 70px);
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+        flex-direction: column;
+        justify-content: flex-start;
+        align-items: center;
+        padding-top: 50px;
+        transition: left 0.3s ease;
+        z-index: 1000;
+    }
+    
+    .nav-menu.active {
+        left: 0;
+    }
+    
+    .nav-menu li {
+        margin: 20px 0;
+    }
+    
+    .nav-menu a {
+        font-size: 18px;
+        padding: 15px 30px;
+    }
+    
+    .hamburger {
+        display: block;
+    }
+    
+    /* Заголовки */
+    h1 {
+        font-size: 2.5rem;
+    }
+    
+    h2 {
+        font-size: 2rem;
+    }
+    
+    /* Секции */
+    .hero {
+        padding: 80px 0 60px;
+        text-align: center;
+    }
+    
+    .hero h1 {
+        font-size: 2.2rem;
+        margin-bottom: 20px;
+    }
+    
+    .hero p {
+        font-size: 1.1rem;
+        margin-bottom: 30px;
+    }
+    
+    /* Карточки питомцев */
+    .pets-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .pet-card {
+        margin: 0 auto;
+        max-width: 350px;
+    }
+    
+    .pet-card img {
+        height: 200px;
+    }
+    
+    /* Фильтры */
+    .pets-filter {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .filter-group {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .filter-group .filter-btn {
+        margin: 3px;
+        padding: 6px 12px;
+        font-size: 13px;
+    }
+    
+    /* Модальные окна */
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+        padding: 15px;
+        max-height: 90vh;
+    }
+    
+    .auth-tabs {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        margin: 5px 0;
+        padding: 12px 20px;
+    }
+    
+    /* Формы */
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    /* Кнопки */
+    .btn {
+        padding: 12px 20px;
+        font-size: 16px;
+    }
+    
+    /* Статистика */
+    .stats {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .stat {
+        text-align: center;
+    }
+    
+    /* Контакты */
+    .contact-form {
+        padding: 20px;
+    }
+    
+    .contact-form form {
+        max-width: 100%;
+    }
+    
+    /* Футер */
+    .footer {
+        text-align: center;
+        padding: 30px 0;
+    }
+    
+    .footer-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+}
+
+/* Адаптивность для очень маленьких экранов */
+@media (max-width: 480px) {
+    .container {
+        padding: 0 10px;
+    }
+    
+    .hero h1 {
+        font-size: 1.8rem;
+    }
+    
+    .hero p {
+        font-size: 1rem;
+    }
+    
+    .pet-card {
+        max-width: 100%;
+    }
+    
+    .pet-card img {
+        height: 180px;
+    }
+    
+    .modal-content {
+        width: 98%;
+        margin: 2% auto;
+        padding: 10px;
+    }
+    
+    .filter-group .filter-btn {
+        padding: 5px 10px;
+        font-size: 12px;
+    }
+    
+    .btn {
+        padding: 10px 15px;
+        font-size: 14px;
+    }
+}
+
+/* Горизонтальная ориентация на мобильных */
+@media (max-width: 768px) and (orientation: landscape) {
+    .hero {
+        padding: 40px 0 30px;
+    }
+    
+    .hero h1 {
+        font-size: 1.8rem;
+    }
+    
+    .modal-content {
+        margin: 1% auto;
+        max-height: 95vh;
     }
 }

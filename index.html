@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Питомник "Наследие кристализ" - Многопородный питомник</title>
     <link rel="stylesheet" href="styles.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -154,18 +154,19 @@
             </div>
             
             <div class="pets-filter">
-                <button class="filter-btn active" data-filter="all">Все</button>
-                <button class="filter-btn" data-filter="newfoundland">Ньюфаундленд</button>
-                <button class="filter-btn" data-filter="beagle">Бигль</button>
-                <button class="filter-btn" data-filter="shih-tzu">Ши-тцу</button>
-                <button class="filter-btn" data-filter="poodle">Пудель</button>
-            </div>
-
-            <!-- Информационное сообщение для гостей -->
-            <div class="registration-notice">
-                <div class="notice-content">
-                    <i class="fas fa-info-circle"></i>
-                    <p>Для просмотра питомцев на нашем сайте обязательно зарегистрируйтесь!</p>
+                <div class="filter-group">
+                    <h4>Порода:</h4>
+                    <button class="filter-btn active" data-filter="all">Все</button>
+                    <button class="filter-btn" data-filter="newfoundland">Ньюфаундленд</button>
+                    <button class="filter-btn" data-filter="beagle">Бигль</button>
+                    <button class="filter-btn" data-filter="shih-tzu">Ши-тцу</button>
+                    <button class="filter-btn" data-filter="poodle">Пудель</button>
+                </div>
+                <div class="filter-group">
+                    <h4>Пол:</h4>
+                    <button class="filter-btn" data-gender="all">Все</button>
+                    <button class="filter-btn" data-gender="male">Кобели ♂</button>
+                    <button class="filter-btn" data-gender="female">Суки ♀</button>
                 </div>
             </div>
 
@@ -429,7 +430,7 @@
         // ПРОВЕРКА: Скрипт загружается
         console.log('HTML загружен, начинаем загрузку script.js');
         console.log('Время загрузки:', new Date().toISOString());
-        console.log('Версия HTML: 20250122_REGISTRATION_NOTICE');
+        console.log('Версия HTML: 20250122_RESPONSIVE_MOBILE');
         
         // АГРЕССИВНАЯ ОЧИСТКА КЭША
         if ('caches' in window) {
@@ -455,7 +456,7 @@
         const timestamp = Date.now();
         console.log('Временная метка для кэш-бастинга:', timestamp);
     </script>
-    <script src="script.js?v=20250122_registration_notice"></script>
+    <script src="script-responsive-2025.js?v=20250122_responsive_mobile"></script>
     <script>
         // ПРОВЕРКА: После загрузки script.js
         console.log('script.js загружен, проверяем функции...');

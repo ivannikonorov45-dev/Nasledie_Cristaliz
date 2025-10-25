@@ -133,3 +133,4 @@ class GitHubStorage {
 
 window.GitHubStorage = GitHubStorage;
 console.log('🎉 ФИНАЛЬНОЕ РЕШЕНИЕ ДЛЯ ФОТОГРАФИЙ ЗАГРУЖЕНО!');
+
