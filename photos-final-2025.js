@@ -8,40 +8,63 @@ class GitHubStorage {
     }
 
     getToken() {
-        let token = localStorage.getItem('github_token');
-        if (!token) {
-            token = prompt('Введите GitHub токен:');
-            if (token) {
-                localStorage.setItem('github_token', token);
-            }
+        // Возвращаем токен из localStorage, если он есть
+        // Если токена нет, возвращаем null - это позволит читать публичные данные
+        return localStorage.getItem('github_token');
+    }
+    
+    setToken(token) {
+        if (token) {
+            localStorage.setItem('github_token', token);
+        } else {
+            localStorage.removeItem('github_token');
         }
-        return token;
+        this.token = token;
     }
 
     async loadData() {
         try {
-            const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/data.json`, {
-                headers: {
-                    'Authorization': `token ${this.token}`,
-                    'Accept': 'application/vnd.github.v3+json'
-                }
-            });
+            // Сначала пытаемся загрузить через API с токеном (если есть)
+            if (this.token) {
+                const response = await fetch(`${this.baseUrl}/repos/${this.owner}/${this.repo}/contents/data.json`, {
+                    headers: {
+                        'Authorization': `token ${this.token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
 
-            if (response.ok) {
-                const fileData = await response.json();
-                const content = decodeURIComponent(escape(atob(fileData.content)));
+                if (response.ok) {
+                    const fileData = await response.json();
+                    const content = decodeURIComponent(escape(atob(fileData.content)));
+                    console.log('✅ Данные загружены через GitHub API с токеном');
+                    return JSON.parse(content);
+                }
+            }
+            
+            // Если токена нет или API не сработал, пытаемся загрузить как публичный файл
+            console.log('🔄 Пытаемся загрузить данные как публичный файл...');
+            const publicResponse = await fetch(`https://raw.githubusercontent.com/${this.owner}/${this.repo}/main/data.json`);
+            
+            if (publicResponse.ok) {
+                const content = await publicResponse.text();
+                console.log('✅ Данные загружены как публичный файл');
                 return JSON.parse(content);
             } else {
-                console.log('Файл данных не найден, создаем новый');
+                console.log('📝 Файл данных не найден, создаем новый');
                 return { users: {}, pets: [] };
             }
         } catch (error) {
-            console.error('Ошибка загрузки из GitHub:', error);
+            console.error('❌ Ошибка загрузки из GitHub:', error);
             return { users: {}, pets: [] };
         }
     }
 
     async saveData(data) {
+        if (!this.token) {
+            console.error('❌ Невозможно сохранить данные: GitHub токен отсутствует');
+            throw new Error('GitHub токен отсутствует. Пожалуйста, войдите как администратор.');
+        }
+        
         try {
             const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
             
@@ -90,6 +113,11 @@ class GitHubStorage {
 
     // ФИНАЛЬНОЕ РЕШЕНИЕ ДЛЯ ФОТОГРАФИЙ!
     async uploadFile(file, filename) {
+        if (!this.token) {
+            console.error('❌ Невозможно загрузить файл: GitHub токен отсутствует');
+            throw new Error('GitHub токен отсутствует. Пожалуйста, войдите как администратор.');
+        }
+        
         try {
             console.log('🚀 ФИНАЛЬНАЯ ЗАГРУЗКА ФОТОГРАФИИ:', filename);
             console.log('🚀 ТИП ФАЙЛА:', typeof file, file.constructor.name);

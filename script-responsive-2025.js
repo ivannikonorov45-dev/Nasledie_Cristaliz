@@ -468,11 +468,13 @@ function setupAuth(){
         e.preventDefault();
         const username = document.getElementById('loginUsername').value.trim();
         const password = document.getElementById('loginPassword').value;
+        const githubToken = document.getElementById('githubToken').value.trim();
         const rememberMe = document.getElementById('rememberMe').checked;
         
         console.log('=== ПОПЫТКА ВХОДА ===');
         console.log('Введенный логин:', username);
         console.log('Введенный пароль:', password);
+        console.log('Введенный токен:', githubToken ? '***' : 'не введен');
         console.log('Все пользователи в базе:', db.users);
         
         const userKey = Object.keys(db.users||{}).find(u => u.toLowerCase()===username.toLowerCase());
@@ -482,6 +484,27 @@ function setupAuth(){
         console.log('Данные пользователя:', user);
         
         if (user && user.password===password){ 
+            // Проверяем токен для администратора
+            if (user.role === 'admin') {
+                if (!githubToken) {
+                    alert('Для входа в качестве администратора необходимо ввести GitHub токен!');
+                    return;
+                }
+                // Сохраняем токен для администратора
+                localStorage.setItem('github_token', githubToken);
+                if (store.github) {
+                    store.github.setToken(githubToken);
+                }
+                console.log('✅ GitHub токен сохранен для администратора');
+            } else {
+                // Для обычных пользователей удаляем токен
+                localStorage.removeItem('github_token');
+                if (store.github) {
+                    store.github.setToken(null);
+                }
+                console.log('✅ Токен удален для обычного пользователя');
+            }
+            
             currentUser=userKey; 
             isAdmin = user.role==='admin'; 
             sessionManager.saveSession(userKey, rememberMe); 
@@ -542,6 +565,12 @@ function setupAuth(){
         sessionManager.clearSession(); 
         currentUser=null; 
         isAdmin=false; 
+        // Удаляем токен при выходе
+        localStorage.removeItem('github_token');
+        if (store.github) {
+            store.github.setToken(null);
+        }
+        console.log('✅ Токен удален при выходе из системы');
         updateUserInterface(); 
         loadPets(); 
         alert('Вы вышли из системы'); 
