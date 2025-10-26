@@ -42,6 +42,18 @@
       ],
       "videos": [],
       "icon": "fas fa-dog"
+    },
+    {
+      "name": "Рыжик",
+      "breed": "А4",
+      "age": "1 годик",
+      "type": "poodle",
+      "gender": "male",
+      "status": "puppy",
+      "description": "1231",
+      "photos": [],
+      "videos": [],
+      "id": 1761496965638
     }
   ]
 }
