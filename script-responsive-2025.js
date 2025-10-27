@@ -869,24 +869,56 @@ async function savePet(){
         // Создаем FormData для отправки
         console.log('Создаем FormData...');
         
-        const petData = {
-            name: formData.get('name') || document.getElementById('petName').value,
-            breed: formData.get('breed') || document.getElementById('petBreed').value,
-            age: formData.get('age') || document.getElementById('petAge').value,
-            type: formData.get('type') || document.getElementById('petType').value,
-            gender: formData.get('gender') || document.getElementById('petGender').value,
-            status: formData.get('status') || document.getElementById('petStatus').value,
-            description: formData.get('description') || document.getElementById('petDescription').value,
-            photos: [],
-            videos: []
-        };
-        
-        console.log('Данные питомца:', petData);
-        
         const petId = document.getElementById('petId').value;
         console.log('ID питомца:', petId);
         
+        // ВАЖНО: Если редактируем существующего питомца - загружаем его данные
+        let petData;
+        if (petId) {
+            console.log('Редактируем существующего питомца, загружаем данные...');
+            const existingPet = db.petsData.find(p => p.id === petId);
+            if (existingPet) {
+                console.log('Найден существующий питомец:', existingPet);
+                // Создаем копию существующих данных
+                petData = {
+                    ...existingPet,
+                    name: formData.get('name') || document.getElementById('petName').value,
+                    breed: formData.get('breed') || document.getElementById('petBreed').value,
+                    age: formData.get('age') || document.getElementById('petAge').value,
+                    type: formData.get('type') || document.getElementById('petType').value,
+                    gender: formData.get('gender') || document.getElementById('petGender').value,
+                    status: formData.get('status') || document.getElementById('petStatus').value,
+                    description: formData.get('description') || document.getElementById('petDescription').value,
+                    // Сохраняем существующие фото и видео
+                    photos: existingPet.photos || [],
+                    videos: existingPet.videos || []
+                };
+                console.log('Данные питомца после загрузки существующих:', petData);
+            } else {
+                console.error('Питомец с ID', petId, 'не найден!');
+                alert('Ошибка: питомец не найден!');
+                return;
+            }
+        } else {
+            // Создаем нового питомца
+            console.log('Создаем нового питомца');
+            petData = {
+                name: formData.get('name') || document.getElementById('petName').value,
+                breed: formData.get('breed') || document.getElementById('petBreed').value,
+                age: formData.get('age') || document.getElementById('petAge').value,
+                type: formData.get('type') || document.getElementById('petType').value,
+                gender: formData.get('gender') || document.getElementById('petGender').value,
+                status: formData.get('status') || document.getElementById('petStatus').value,
+                description: formData.get('description') || document.getElementById('petDescription').value,
+                photos: [],
+                videos: []
+            };
+        }
+        
+        console.log('Итоговые данные питомца:', petData);
+        
         // Обрабатываем накопленные фотографии
+        console.log('📸 Проверка фото: накоплено =', accumulatedPhotos.length, ', существующих =', petData.photos.length);
         if (accumulatedPhotos.length > 0) {
             console.log('Обрабатываем фото:', accumulatedPhotos.length, 'файлов');
             for (let i = 0; i < accumulatedPhotos.length; i++) {
@@ -908,9 +940,13 @@ async function savePet(){
                     // Пропускаем проблемное фото
                 }
             }
+            console.log('✅ Фото обработаны. Итого фото:', petData.photos.length);
+        } else {
+            console.log('ℹ️ Новых фото нет, сохраняем существующие');
         }
         
         // Обрабатываем накопленные видео
+        console.log('🎬 Проверка видео: накоплено =', accumulatedVideos.length, ', существующих =', petData.videos.length);
         if (accumulatedVideos.length > 0) {
             console.log('Обрабатываем видео:', accumulatedVideos.length, 'файлов');
             for (let i = 0; i < accumulatedVideos.length; i++) {
@@ -919,6 +955,7 @@ async function savePet(){
                 try {
                     const extension = file.name.split('.').pop().replace(/\s+/g, ''); // Убираем пробелы
                     const path = `pets/videos/${Date.now()}_${Math.random().toString(36).slice(2)}_${i}.${extension}`;
+                    console.log(`Загружаем видео по пути:`, path);
                     const url = await store.uploadFile(file, path);
                     petData.videos.push(url);
                     console.log(`Видео ${i+1} сохранено:`, url);
@@ -927,9 +964,12 @@ async function savePet(){
                     // Пропускаем проблемное видео
                 }
             }
+            console.log('✅ Видео обработаны. Итого видео:', petData.videos.length);
+        } else {
+            console.log('ℹ️ Новых видео нет, сохраняем существующие');
         }
 
-        console.log('Итого фото:', petData.photos.length, 'видео:', petData.videos.length);
+        console.log('✅ ИТОГО: фото =', petData.photos.length, ', видео =', petData.videos.length);
 
         // Сохраняем питомца
         console.log('Сохраняем питомца...');
