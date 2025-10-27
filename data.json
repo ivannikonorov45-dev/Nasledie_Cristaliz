@@ -6,5 +6,18 @@
       "email": "tatyana02_76@mail.ru"
     }
   },
-  "pets": []
+  "pets": [
+    {
+      "name": "Леди Фортуна Константа",
+      "breed": "1",
+      "age": "9",
+      "type": "newfoundland",
+      "gender": "female",
+      "status": "memory",
+      "description": "Наша Леди",
+      "photos": [],
+      "videos": [],
+      "id": 1761580800435
+    }
+  ]
 }
