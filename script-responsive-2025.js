@@ -18,7 +18,6 @@ let syncInProgress = false;
 
 // Глобальные переменные для накопления файлов
 let accumulatedPhotos = [];
-let accumulatedVideos = [];
 
 // Утилиты изображений: ресайз под карточки (макс ширина x высота)
 async function resizeImage(file, maxW = 1200, maxH = 1200, mime = 'image/jpeg', quality = 0.85) {
@@ -711,27 +710,19 @@ function setupModals(){
     closeButtons.forEach(b=>b.addEventListener('click', function(){ loginModal.style.display='none'; petModal.style.display='none'; if(viewModal) viewModal.style.display='none'; }));
     window.addEventListener('click', function(e){ if(e.target===loginModal) loginModal.style.display='none'; if(e.target===petModal) petModal.style.display='none'; if(viewModal && e.target===viewModal) viewModal.style.display='none'; });
     document.getElementById('addPetBtn').addEventListener('click', function(){ if(!isAdmin) return alert('Нет прав'); openPetModal(); });
-    const addPuppyBtn=document.getElementById('addPuppyBtn'); const addGraduateBtn=document.getElementById('addGraduateBtn'); const addMemoryBtn=document.getElementById('addMemoryBtn'); const addVideoBtn=document.getElementById('addVideoBtn');
+    const addPuppyBtn=document.getElementById('addPuppyBtn'); const addGraduateBtn=document.getElementById('addGraduateBtn'); const addMemoryBtn=document.getElementById('addMemoryBtn');
     if (addPuppyBtn) addPuppyBtn.addEventListener('click', function(){ if(!isAdmin) return alert('Нет прав'); openPetModal(); document.getElementById('petStatus').value='puppy'; });
     if (addGraduateBtn) addGraduateBtn.addEventListener('click', function(){ if(!isAdmin) return alert('Нет прав'); openPetModal(); document.getElementById('petStatus').value='graduate'; });
     if (addMemoryBtn) addMemoryBtn.addEventListener('click', function(){ if(!isAdmin) return alert('Нет прав'); openPetModal(); document.getElementById('petStatus').value='memory'; });
-    if (addVideoBtn) addVideoBtn.addEventListener('click', function(){ if(!isAdmin) return alert('Нет прав'); openPetModal(); document.getElementById('petStatus').value='memory'; });
     document.getElementById('petForm').addEventListener('submit', function(e){ e.preventDefault(); savePet(); });
 
     // Предпросмотр множественных фотографий с накоплением
     const photosInput = document.getElementById('petPhotos');
-    const videosInput = document.getElementById('petVideos');
     if (photosInput) photosInput.addEventListener('change', function(e){
         const newFiles = Array.from(e.target.files || []);
         accumulatedPhotos = [...accumulatedPhotos, ...newFiles];
         updatePhotoPreview();
         console.log('Накоплено фото:', accumulatedPhotos.length);
-    });
-    if (videosInput) videosInput.addEventListener('change', function(e){
-        const newFiles = Array.from(e.target.files || []);
-        accumulatedVideos = [...accumulatedVideos, ...newFiles];
-        updateVideoPreview();
-        console.log('Накоплено видео:', accumulatedVideos.length);
     });
 }
 
@@ -755,26 +746,6 @@ function updatePhotoPreview() {
     }
 }
 
-function updateVideoPreview() {
-    const preview = document.getElementById('videoPreview');
-    if (preview) {
-        preview.innerHTML = '';
-        accumulatedVideos.forEach((file, index) => {
-            if (file.type.startsWith('video/')) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                    const video = document.createElement('video');
-                    video.src = e.target.result;
-                    video.style.cssText = 'max-width: 120px; max-height: 80px; margin: 5px; border-radius: 8px; border: 2px solid #e74c3c;';
-                    video.title = `Видео ${index + 1}: ${file.name}`;
-                    video.controls = true;
-                    preview.appendChild(video);
-            };
-            reader.readAsDataURL(file);
-        }
-    });
-    }
-}
 
 function openPetModal(pet=null){
     console.log('=== ОТКРЫТИЕ МОДАЛЬНОГО ОКНА ===');
@@ -783,7 +754,6 @@ function openPetModal(pet=null){
     
     // Очищаем накопленные файлы при открытии модального окна
     accumulatedPhotos = [];
-    accumulatedVideos = [];
     console.log('Накопленные файлы очищены');
     
     const modal=document.getElementById('petModal'); 
@@ -807,7 +777,6 @@ function openPetModal(pet=null){
         document.getElementById('petStatus').value=pet.status||'breeding';
         document.getElementById('petDescription').value=pet.description;
         document.getElementById('photoPreview').innerHTML='';
-        document.getElementById('videoPreview').innerHTML='';
         if (pet.photos && pet.photos.length > 0) {
             pet.photos.forEach((photo, index) => {
                 const img = document.createElement('img');
@@ -817,22 +786,11 @@ function openPetModal(pet=null){
                 document.getElementById('photoPreview').appendChild(img);
             });
         }
-        if (pet.videos && pet.videos.length > 0) {
-            pet.videos.forEach((video, index) => {
-                const v = document.createElement('video');
-                v.src = video;
-                v.style.cssText = 'max-width: 120px; max-height: 80px; margin: 5px; border-radius: 8px; border: 2px solid #e74c3c;';
-                v.title = `Видео ${index + 1}`;
-                v.controls = true;
-                document.getElementById('videoPreview').appendChild(v);
-            });
-        }
         } else {
         title.textContent='Добавить собаку'; 
         form.reset();
         document.getElementById('petId').value=''; 
         document.getElementById('photoPreview').innerHTML=''; 
-        document.getElementById('videoPreview').innerHTML='';
     }
     modal.style.display='block'; 
     modal.scrollTop=0;
@@ -889,9 +847,8 @@ async function savePet(){
                     gender: formData.get('gender') || document.getElementById('petGender').value,
                     status: formData.get('status') || document.getElementById('petStatus').value,
                     description: formData.get('description') || document.getElementById('petDescription').value,
-                    // Сохраняем существующие фото и видео
-                    photos: existingPet.photos || [],
-                    videos: existingPet.videos || []
+                    // Сохраняем существующие фото
+                    photos: existingPet.photos || []
                 };
                 console.log('Данные питомца после загрузки существующих:', petData);
             } else {
@@ -910,8 +867,7 @@ async function savePet(){
                 gender: formData.get('gender') || document.getElementById('petGender').value,
                 status: formData.get('status') || document.getElementById('petStatus').value,
                 description: formData.get('description') || document.getElementById('petDescription').value,
-                photos: [],
-                videos: []
+                photos: []
             };
         }
         
@@ -945,31 +901,7 @@ async function savePet(){
             console.log('ℹ️ Новых фото нет, сохраняем существующие');
         }
         
-        // Обрабатываем накопленные видео
-        console.log('🎬 Проверка видео: накоплено =', accumulatedVideos.length, ', существующих =', petData.videos.length);
-        if (accumulatedVideos.length > 0) {
-            console.log('Обрабатываем видео:', accumulatedVideos.length, 'файлов');
-            for (let i = 0; i < accumulatedVideos.length; i++) {
-                const file = accumulatedVideos[i];
-                console.log(`Обрабатываем видео ${i+1}/${accumulatedVideos.length}:`, file.name);
-                try {
-                    const extension = file.name.split('.').pop().replace(/\s+/g, ''); // Убираем пробелы
-                    const path = `pets/videos/${Date.now()}_${Math.random().toString(36).slice(2)}_${i}.${extension}`;
-                    console.log(`Загружаем видео по пути:`, path);
-                    const url = await store.uploadFile(file, path);
-                    petData.videos.push(url);
-                    console.log(`Видео ${i+1} сохранено:`, url);
-                } catch (error) {
-                    console.warn(`Ошибка загрузки видео ${i+1}:`, error.message);
-                    // Пропускаем проблемное видео
-                }
-            }
-            console.log('✅ Видео обработаны. Итого видео:', petData.videos.length);
-        } else {
-            console.log('ℹ️ Новых видео нет, сохраняем существующие');
-        }
-
-        console.log('✅ ИТОГО: фото =', petData.photos.length, ', видео =', petData.videos.length);
+        console.log('✅ ИТОГО: фото =', petData.photos.length);
 
         // Сохраняем питомца
         console.log('Сохраняем питомца...');
@@ -988,13 +920,10 @@ async function savePet(){
         // Очищаем поля файлов после сохранения
         console.log('Очищаем поля формы...');
         document.getElementById('petPhotos').value = '';
-        document.getElementById('petVideos').value = '';
         document.getElementById('photoPreview').innerHTML = '';
-        document.getElementById('videoPreview').innerHTML = '';
         
         // Очищаем накопленные файлы
         accumulatedPhotos = [];
-        accumulatedVideos = [];
         console.log('Поля очищены');
     
         console.log('Обновляем отображение питомцев...');

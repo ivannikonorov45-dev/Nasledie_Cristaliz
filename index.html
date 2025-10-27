@@ -86,7 +86,6 @@
                 <li><a href="#graduates" class="nav-link">Выпускники</a></li>
                 <li><a href="#achievements" class="nav-link">Наши достижения</a></li>
                 <li><a href="#memory" class="nav-link">Наша память</a></li>
-                <li><a href="#videos" class="nav-link">Видео</a></li>
                 <li><a href="#contact" class="nav-link">Контакты</a></li>
             </ul>
             <div class="user-controls">
@@ -248,20 +247,6 @@
         </div>
     </section>
 
-    <!-- Отдельная вкладка для видео -->
-    <section id="videos" class="pets">
-        <div class="container">
-            <div class="pets-header">
-                <h2>Видео</h2>
-                <p class="section-subtitle">Видео с участием наших собак</p>
-                <button id="addVideoBtn" class="btn btn-primary admin-only" style="display: none;">
-                    <i class="fas fa-plus"></i> Добавить видео
-                </button>
-            </div>
-            <div class="pets-grid" id="videosGrid"></div>
-        </div>
-    </section>
-
     <!-- Контакты -->
     <section id="contact" class="contact">
         <div class="container">
@@ -337,7 +322,6 @@
                         <li><a href="#graduates">Выпускники</a></li>
                         <li><a href="#achievements">Достижения</a></li>
                         <li><a href="#memory">Память</a></li>
-                        <li><a href="#videos">Видео</a></li>
                         <li><a href="#contact">Контакты</a></li>
                     </ul>
                 </div>
@@ -405,11 +389,6 @@
                     <label for="petPhotos">Фотографии (можно несколько):</label>
                     <input type="file" id="petPhotos" name="photos" accept="image/*" multiple>
                     <div id="photoPreview" class="photo-preview"></div>
-                </div>
-                <div class="form-group">
-                    <label for="petVideos">Видео (можно несколько):</label>
-                    <input type="file" id="petVideos" name="videos" accept="video/*" multiple>
-                    <div id="videoPreview" class="photo-preview"></div>
                 </div>
                 <div class="form-actions">
                     <button type="submit" class="btn btn-primary">Сохранить</button>
