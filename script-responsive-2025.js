@@ -72,10 +72,27 @@ class Store {
     }
     
     async saveData(data) {
+        console.log('💾 Store.saveData() вызван');
+        console.log('🔍 Проверяем _canWriteToGitHub():', this._canWriteToGitHub());
+        console.log('🔍 store.github:', !!this.github);
+        console.log('🔍 store.github.token:', !!this.github?.token);
+        console.log('🔍 Содержимое данных:', { users: data.users, pets: data.pets });
+        
         if (this._canWriteToGitHub()) {
-            return await this.github.saveData(data);
+            console.log('✅ Сохраняем в GitHub...');
+            try {
+                const result = await this.github.saveData(data);
+                console.log('✅ Данные сохранены в GitHub:', result);
+                return result;
+            } catch (error) {
+                console.error('❌ Ошибка сохранения в GitHub:', error);
+                console.log('⚠️ Пытаемся сохранить в Local Storage...');
+                return await this.local.saveData(data);
+            }
+        } else {
+            console.log('💾 Сохраняем в Local Storage (нет токена GitHub)');
+            return await this.local.saveData(data);
         }
-        return await this.local.saveData(data);
     }
     
     async loadData() {
@@ -948,10 +965,11 @@ async function savePet(){
         
         // ВАЖНО: Сохраняем данные сразу после добавления/редактирования карточки
         // Это гарантирует, что данные не пропадут при обновлении страницы
-        console.log('💾 Сохраняем данные...');
+        console.log('💾 Сохраняем данные после добавления карточки...');
         try {
-            await store.saveData({ users: db.users, pets: db.petsData });
-            console.log('✅ Данные успешно сохранены');
+            const result = await store.saveData({ users: db.users, pets: db.petsData });
+            console.log('✅ Данные успешно сохранены. Результат:', result);
+            alert('Карточка успешно добавлена и сохранена!');
         } catch (error) {
             console.error('❌ Ошибка сохранения данных:', error);
             alert('Карточка добавлена, но произошла ошибка сохранения: ' + error.message);
