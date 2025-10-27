@@ -62,6 +62,18 @@
       ],
       "videos": [],
       "id": 1761582376034
+    },
+    {
+      "name": "1",
+      "breed": "2",
+      "age": "3",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "memory",
+      "description": "Проба",
+      "photos": [],
+      "videos": [],
+      "id": 1761583223825
     }
   ]
 }
