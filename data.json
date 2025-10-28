@@ -85,6 +85,17 @@
       "description": "Б",
       "photos": [],
       "id": 1761688871380
+    },
+    {
+      "name": "Г",
+      "breed": "Нк",
+      "age": "А",
+      "type": "beagle",
+      "gender": "female",
+      "status": "graduate",
+      "description": "6",
+      "photos": [],
+      "id": 1761688904791
     }
   ]
 }
