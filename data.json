@@ -96,6 +96,17 @@
       "description": "6",
       "photos": [],
       "id": 1761688904791
+    },
+    {
+      "name": "Е",
+      "breed": "Н",
+      "age": "О",
+      "type": "newfoundland",
+      "gender": "female",
+      "status": "breeding",
+      "description": "О",
+      "photos": [],
+      "id": 1761688927447
     }
   ]
 }
