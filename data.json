@@ -63,6 +63,17 @@
       "description": "4",
       "photos": [],
       "id": 1761688832942
+    },
+    {
+      "name": "9",
+      "breed": "9",
+      "age": "9",
+      "type": "poodle",
+      "gender": "male",
+      "status": "breeding",
+      "description": "1",
+      "photos": [],
+      "id": 1761688851243
     }
   ]
 }
