@@ -30,6 +30,17 @@
       "description": "Свободны мальчики ",
       "photos": [],
       "id": 1761680492123
+    },
+    {
+      "name": "1",
+      "breed": "1",
+      "age": "1",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "1",
+      "photos": [],
+      "id": 1761688786406
     }
   ]
 }
