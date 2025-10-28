@@ -107,6 +107,17 @@
       "description": "О",
       "photos": [],
       "id": 1761688927447
+    },
+    {
+      "name": "G",
+      "breed": "G",
+      "age": "52",
+      "type": "poodle",
+      "gender": "female",
+      "status": "puppy",
+      "description": "5252",
+      "photos": [],
+      "id": 1761691003171
     }
   ]
 }
