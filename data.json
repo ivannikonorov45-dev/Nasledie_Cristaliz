@@ -41,6 +41,17 @@
       "description": "1",
       "photos": [],
       "id": 1761688786406
+    },
+    {
+      "name": "2",
+      "breed": "2",
+      "age": "2",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "2",
+      "photos": [],
+      "id": 1761688809575
     }
   ]
 }
