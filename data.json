@@ -17,6 +17,17 @@
       "description": "Пупсы",
       "photos": [],
       "id": 1761750487972
+    },
+    {
+      "name": "Рок",
+      "breed": "1",
+      "age": "1",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "1",
+      "photos": [],
+      "id": 1761750600510
     }
   ]
 }
