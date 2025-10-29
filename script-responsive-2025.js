@@ -326,12 +326,42 @@ class Database {
             const data = await store.loadData();
             console.log('📥 Данные получены от store.loadData():', data);
             
-            this.users = data.users || {};
-            this.petsData = data.pets || [];
+            // КРИТИЧЕСКАЯ ПРОВЕРКА: Если получили пустые данные, пытаемся восстановить из localStorage
+            if ((!data.pets || data.pets.length === 0) && (!data.users || Object.keys(data.users).length === 0)) {
+                console.warn('⚠️ ВНИМАНИЕ! Получены пустые данные от store.loadData()');
+                console.log('🔍 Проверяем localStorage...');
+                
+                const localData = await store.local.loadData();
+                console.log('📦 Данные из localStorage:', {
+                    users: Object.keys(localData.users || {}).length,
+                    pets: (localData.pets || []).length
+                });
+                
+                if (localData.pets && localData.pets.length > 0) {
+                    console.log('✅ ВОССТАНОВЛЕНИЕ: Используем данные из localStorage');
+                    this.users = localData.users || {};
+                    this.petsData = localData.pets || [];
+                } else {
+                    console.log('ℹ️ В localStorage тоже нет данных, начинаем с пустой базы');
+                    this.users = data.users || {};
+                    this.petsData = data.pets || [];
+                }
+            } else {
+                this.users = data.users || {};
+                this.petsData = data.pets || [];
+            }
             
             console.log('✅ Данные загружены. Пользователей:', Object.keys(this.users).length, 'Питомцев:', this.petsData.length);
             console.log('📊 Содержимое this.users:', this.users);
             console.log('📊 Содержимое this.petsData:', this.petsData);
+            
+            // Сохраняем snapshot данных для защиты
+            window.lastKnownGoodData = {
+                users: JSON.parse(JSON.stringify(this.users)),
+                pets: JSON.parse(JSON.stringify(this.petsData)),
+                timestamp: Date.now()
+            };
+            console.log('💾 Snapshot данных сохранен для защиты');
             
             // Принудительно создаем/обновляем админский аккаунт
             console.log('=== ПРОВЕРКА АДМИНСКОГО АККАУНТА ===');
@@ -345,6 +375,13 @@ class Database {
                     password: 'TatyanaKiseleva1231',
                     role: 'admin',
                     email: 'tatyana02_76@mail.ru'
+                };
+                
+                // Обновляем snapshot
+                window.lastKnownGoodData = {
+                    users: JSON.parse(JSON.stringify(this.users)),
+                    pets: JSON.parse(JSON.stringify(this.petsData)),
+                    timestamp: Date.now()
                 };
                 
                 // Сохраняем обновленные данные
@@ -816,6 +853,21 @@ function openPetModal(pet=null){
     console.log('isAdmin:', isAdmin);
     console.log('pet:', pet);
     
+    // 🚨 КРИТИЧЕСКАЯ ПРОВЕРКА: Проверяем db.petsData ПЕРЕД открытием модального окна
+    console.log('🔍 ПРОВЕРКА db.petsData перед открытием формы:', db.petsData.length);
+    
+    // Если данные пусты и есть snapshot - восстанавливаем
+    if (db.petsData.length === 0 && window.lastKnownGoodData && window.lastKnownGoodData.pets.length > 0) {
+        console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА: db.petsData пуст при открытии формы!');
+        console.log('🔄 ВОССТАНОВЛЕНИЕ из snapshot...');
+        
+        db.petsData = JSON.parse(JSON.stringify(window.lastKnownGoodData.pets));
+        db.users = JSON.parse(JSON.stringify(window.lastKnownGoodData.users));
+        
+        console.log('✅ ДАННЫЕ ВОССТАНОВЛЕНЫ:', db.petsData.length, 'питомцев');
+        loadPets();
+    }
+    
     // Очищаем накопленные файлы при открытии модального окна
     accumulatedPhotos = [];
     console.log('Накопленные файлы очищены');
@@ -879,6 +931,28 @@ async function savePet(){
     if (!isAdmin) {
         alert('Только администратор может добавлять питомцев!');
         return;
+    }
+    
+    // 🚨 КРИТИЧЕСКАЯ ПРОВЕРКА: Проверяем db.petsData ДО начала операции
+    console.log('🔍 КРИТИЧЕСКАЯ ПРОВЕРКА перед сохранением:');
+    console.log('📊 db.petsData.length =', db.petsData.length);
+    console.log('📊 db.users =', Object.keys(db.users || {}).length, 'пользователей');
+    
+    // Если данные пусты - пытаемся восстановить из snapshot
+    if (db.petsData.length === 0 && window.lastKnownGoodData && window.lastKnownGoodData.pets.length > 0) {
+        console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА: db.petsData пуст!');
+        console.log('🔄 ВОССТАНОВЛЕНИЕ из snapshot...');
+        console.log('📦 Snapshot содержит:', window.lastKnownGoodData.pets.length, 'питомцев');
+        
+        // Восстанавливаем данные из snapshot
+        db.petsData = JSON.parse(JSON.stringify(window.lastKnownGoodData.pets));
+        db.users = JSON.parse(JSON.stringify(window.lastKnownGoodData.users));
+        
+        console.log('✅ ДАННЫЕ ВОССТАНОВЛЕНЫ из snapshot');
+        console.log('📊 Восстановлено питомцев:', db.petsData.length);
+        
+        // Обновляем отображение
+        loadPets();
     }
     
     try {
@@ -1000,6 +1074,14 @@ async function savePet(){
             const result = await store.saveData(dataToSave);
             console.log('✅ Данные успешно сохранены на сервер. Результат:', result);
             
+            // 💾 ОБНОВЛЯЕМ SNAPSHOT после успешного сохранения
+            window.lastKnownGoodData = {
+                users: JSON.parse(JSON.stringify(db.users)),
+                pets: JSON.parse(JSON.stringify(db.petsData)),
+                timestamp: Date.now()
+            };
+            console.log('💾 Snapshot обновлен:', window.lastKnownGoodData.pets.length, 'питомцев');
+            
             // Очищаем поля файлов после УСПЕШНОГО сохранения
             console.log('Очищаем поля формы...');
             document.getElementById('petPhotos').value = '';
@@ -1069,6 +1151,25 @@ function loadPets(){
         petsCount: (db.petsData || []).length
     });
     
+    // 🚨 КРИТИЧЕСКАЯ ПРОВЕРКА: Если db.petsData пуст, но есть snapshot - восстанавливаем
+    if (db.petsData.length === 0 && window.lastKnownGoodData && window.lastKnownGoodData.pets.length > 0) {
+        console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА: db.petsData пуст при загрузке карточек!');
+        console.log('🔄 АВТОМАТИЧЕСКОЕ ВОССТАНОВЛЕНИЕ из snapshot...');
+        console.log('📦 Snapshot содержит:', window.lastKnownGoodData.pets.length, 'питомцев');
+        
+        db.petsData = JSON.parse(JSON.stringify(window.lastKnownGoodData.pets));
+        db.users = JSON.parse(JSON.stringify(window.lastKnownGoodData.users));
+        
+        console.log('✅ ДАННЫЕ АВТОМАТИЧЕСКИ ВОССТАНОВЛЕНЫ');
+        
+        // Показываем уведомление администратору
+        if (isAdmin) {
+            setTimeout(() => {
+                alert(`⚠️ ВНИМАНИЕ!\n\nДанные были автоматически восстановлены из резервной копии.\n\nВосстановлено: ${db.petsData.length} карточек\n\nРекомендуется синхронизировать данные с сервером.`);
+            }, 1000);
+        }
+    }
+    
     const petsGrid=document.getElementById('petsGrid'); 
     const puppiesGrid=document.getElementById('puppiesGrid'); 
     const graduatesGrid=document.getElementById('graduatesGrid'); 
@@ -1094,6 +1195,17 @@ function loadPets(){
         console.warn('⚠️ НЕТ ПИТОМЦЕВ В БАЗЕ ДАННЫХ!');
         console.log('🔍 Проверяем db.petsData:', db.petsData);
         console.log('🔍 Проверяем db.users:', db.users);
+        console.log('🔍 Проверяем snapshot:', window.lastKnownGoodData);
+    }
+    
+    // 💾 Обновляем snapshot после успешной загрузки (если данные не пусты)
+    if (pets.length > 0 && (!window.lastKnownGoodData || window.lastKnownGoodData.pets.length < pets.length)) {
+        window.lastKnownGoodData = {
+            users: JSON.parse(JSON.stringify(db.users)),
+            pets: JSON.parse(JSON.stringify(db.petsData)),
+            timestamp: Date.now()
+        };
+        console.log('💾 Snapshot обновлен при загрузке карточек:', pets.length, 'питомцев');
     }
     
     pets.forEach((pet, index) => {
@@ -1310,6 +1422,13 @@ function setupAdminFunctions(){
             db.users = localData.users || {};
             db.petsData = localData.pets || [];
             
+            // Обновляем snapshot
+            window.lastKnownGoodData = {
+                users: JSON.parse(JSON.stringify(db.users)),
+                pets: JSON.parse(JSON.stringify(db.petsData)),
+                timestamp: Date.now()
+            };
+            
             // Сохраняем восстановленные данные
             await store.saveData({ users: db.users, pets: db.petsData });
             
@@ -1320,6 +1439,61 @@ function setupAdminFunctions(){
             console.error('❌ Ошибка восстановления:', error);
             alert('Ошибка восстановления данных: ' + error.message);
         }
+    };
+    
+    // 🆕 НОВАЯ ФУНКЦИЯ: Восстановление из snapshot (в памяти)
+    window.restoreFromSnapshot = function(){
+        if (!isAdmin) {
+            alert('Только администратор может восстанавливать данные!');
+            return;
+        }
+        
+        if (!window.lastKnownGoodData || !window.lastKnownGoodData.pets || window.lastKnownGoodData.pets.length === 0) {
+            alert('Snapshot пуст или отсутствует! Попробуйте restoreFromLocalStorage()');
+            return;
+        }
+        
+        console.log('🔄 Восстановление из snapshot...');
+        console.log('📦 Snapshot содержит:', window.lastKnownGoodData.pets.length, 'питомцев');
+        console.log('📦 Возраст snapshot:', Math.round((Date.now() - window.lastKnownGoodData.timestamp) / 1000), 'секунд');
+        
+        if (!confirm(`Восстановить данные из snapshot?\n\nSnapshot содержит: ${window.lastKnownGoodData.pets.length} питомцев\nВозраст: ${Math.round((Date.now() - window.lastKnownGoodData.timestamp) / 1000)} секунд назад`)) {
+            return;
+        }
+        
+        db.petsData = JSON.parse(JSON.stringify(window.lastKnownGoodData.pets));
+        db.users = JSON.parse(JSON.stringify(window.lastKnownGoodData.users));
+        
+        console.log('✅ ДАННЫЕ ВОССТАНОВЛЕНЫ из snapshot');
+        console.log('📊 Восстановлено питомцев:', db.petsData.length);
+        
+        loadPets();
+        alert(`Данные восстановлены из snapshot! Восстановлено ${db.petsData.length} карточек.`);
+    };
+    
+    // 🆕 НОВАЯ ФУНКЦИЯ: Показать информацию о snapshot
+    window.showSnapshotInfo = function(){
+        if (!window.lastKnownGoodData) {
+            console.log('❌ Snapshot отсутствует');
+            alert('Snapshot отсутствует');
+            return;
+        }
+        
+        const info = `
+📊 ИНФОРМАЦИЯ О SNAPSHOT:
+
+🐕 Питомцев: ${window.lastKnownGoodData.pets.length}
+👥 Пользователей: ${Object.keys(window.lastKnownGoodData.users || {}).length}
+⏰ Создан: ${new Date(window.lastKnownGoodData.timestamp).toLocaleString()}
+⏱️ Возраст: ${Math.round((Date.now() - window.lastKnownGoodData.timestamp) / 1000)} секунд назад
+
+ТЕКУЩЕЕ СОСТОЯНИЕ БД:
+🐕 Питомцев: ${db.petsData.length}
+👥 Пользователей: ${Object.keys(db.users || {}).length}
+        `;
+        
+        console.log(info);
+        alert(info);
     };
     
     // Обработчик импорта файлов
