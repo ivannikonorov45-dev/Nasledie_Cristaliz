@@ -75,13 +75,39 @@ class Store {
         console.log('🔍 Проверяем _canWriteToGitHub():', this._canWriteToGitHub());
         console.log('🔍 store.github:', !!this.github);
         console.log('🔍 store.github.token:', !!this.github?.token);
-        console.log('🔍 Содержимое данных:', { users: data.users, pets: data.pets });
+        console.log('🔍 Содержимое данных:', { 
+            users: data.users, 
+            usersCount: Object.keys(data.users || {}).length,
+            pets: data.pets,
+            petsCount: (data.pets || []).length
+        });
+        
+        // КРИТИЧЕСКАЯ ЗАЩИТА: Не сохраняем, если данные выглядят подозрительно (меньше 10 питомцев)
+        // Это защищает от случайной перезаписи базы пустыми данными
+        const petsCount = (data.pets || []).length;
+        if (petsCount === 0) {
+            console.warn('⚠️ ВНИМАНИЕ! Попытка сохранить ПУСТОЙ массив питомцев!');
+            console.warn('⚠️ Это может быть ошибкой! Проверяем данные...');
+            
+            // Проверяем, есть ли данные в localStorage как резервная копия
+            const localData = await this.local.loadData();
+            if (localData.pets && localData.pets.length > 0) {
+                console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА! Попытка удалить все данные!');
+                console.error('🚨 В localStorage есть', localData.pets.length, 'питомцев');
+                console.error('🚨 СОХРАНЕНИЕ ОТМЕНЕНО!');
+                alert('ОШИБКА: Попытка сохранить пустую базу данных! Сохранение отменено для защиты данных.');
+                return false;
+            }
+        }
         
         if (this._canWriteToGitHub()) {
             console.log('✅ Сохраняем в GitHub...');
             try {
                 const result = await this.github.saveData(data);
                 console.log('✅ Данные сохранены в GitHub:', result);
+                // Дублируем в localStorage как резервную копию
+                await this.local.saveData(data);
+                console.log('✅ Резервная копия сохранена в localStorage');
                 return result;
             } catch (error) {
                 console.error('❌ Ошибка сохранения в GitHub:', error);
@@ -174,22 +200,41 @@ class RealtimeSync {
     }
     
     async syncData() {
-        if (syncInProgress) return;
+        if (syncInProgress) {
+            console.log('⚠️ Синхронизация уже в процессе, пропускаем...');
+            return;
+        }
         
         syncInProgress = true;
         console.log('🔄 Синхронизация данных...');
+        console.log('📊 Текущее состояние:', {
+            users: Object.keys(db.users || {}).length,
+            pets: (db.petsData || []).length
+        });
         
         try {
             const currentData = { users: db.users, pets: db.petsData };
             const currentHash = this.getDataHash(currentData);
             
+            console.log('🔍 Хэш данных:', currentHash, 'Последний хэш:', lastSyncTime);
+            
             if (currentHash !== lastSyncTime) {
+                // ЗАЩИТА: Не синхронизируем пустые данные
+                if ((currentData.pets || []).length === 0) {
+                    console.warn('⚠️ ОТМЕНА СИНХРОНИЗАЦИИ: попытка синхронизировать пустые данные');
+                    this.updateSyncStatus('error', 'Синхронизация отменена (защита от потери данных)');
+                    return;
+                }
+                
                 await store.saveData(currentData);
                 lastSyncTime = currentHash;
                 this.updateSyncStatus('success', 'Данные синхронизированы');
+                console.log('✅ Синхронизация завершена успешно');
+            } else {
+                console.log('ℹ️ Данные не изменились, синхронизация не требуется');
             }
         } catch (error) {
-            console.error('Ошибка синхронизации:', error);
+            console.error('❌ Ошибка синхронизации:', error);
             this.updateSyncStatus('error', 'Ошибка синхронизации');
         } finally {
             syncInProgress = false;
@@ -234,7 +279,18 @@ class RealtimeSync {
     async forceSync() {
         console.log('🔄 Принудительная синхронизация...');
         const currentData = { users: db.users, pets: db.petsData };
-        console.log('Текущие данные:', currentData);
+        console.log('📊 Текущие данные для синхронизации:', {
+            users: Object.keys(currentData.users || {}).length,
+            pets: (currentData.pets || []).length,
+            petNames: (currentData.pets || []).map(p => p.name)
+        });
+        
+        // ЗАЩИТА: Не синхронизируем пустые данные
+        if ((currentData.pets || []).length === 0) {
+            console.warn('⚠️ ОТМЕНА СИНХРОНИЗАЦИИ: попытка синхронизировать пустые данные');
+            this.showNotification('Синхронизация отменена: нет данных для сохранения', 'error');
+            return;
+        }
         
         try {
             console.log('Сохраняем в GitHub...');
@@ -247,7 +303,7 @@ class RealtimeSync {
                 this.showNotification('Ошибка синхронизации данных', 'error');
             }
         } catch (error) {
-            console.error('Ошибка принудительной синхронизации:', error);
+            console.error('❌ Ошибка принудительной синхронизации:', error);
             this.showNotification('Ошибка синхронизации: ' + error.message, 'error');
         }
     }
@@ -315,9 +371,11 @@ class Database {
         return this.users[username];
     }
     
-    addUser(username, userData) {
+    async addUser(username, userData) {
         this.users[username] = userData;
-        return this.saveUsers();
+        console.log('✅ Пользователь добавлен:', username);
+        // Сохраняем данные вручную
+        return await store.saveData({ users: this.users, pets: this.petsData });
     }
     
     getAllPets() {
@@ -327,14 +385,18 @@ class Database {
     addPet(petData) {
         petData.id = petData.id || Date.now();
         this.petsData.push(petData);
-        return this.savePets();
+        // НЕ сохраняем автоматически - это будет сделано вручную после завершения всех операций
+        console.log('✅ Питомец добавлен в массив, текущее количество:', this.petsData.length);
+        return true;
     }
     
     updatePet(petId, petData) {
         const index = this.petsData.findIndex(p => p.id === petId);
         if (index !== -1) {
             this.petsData[index] = { ...this.petsData[index], ...petData };
-            return this.savePets();
+            // НЕ сохраняем автоматически - это будет сделано вручную после завершения всех операций
+            console.log('✅ Питомец обновлен в массиве, текущее количество:', this.petsData.length);
+            return true;
         }
         return false;
     }
@@ -343,7 +405,9 @@ class Database {
         const index = this.petsData.findIndex(p => p.id === petId);
         if (index !== -1) {
             this.petsData.splice(index, 1);
-            return this.savePets();
+            // НЕ сохраняем автоматически - это будет сделано вручную после завершения всех операций
+            console.log('✅ Питомец удален из массива, текущее количество:', this.petsData.length);
+            return true;
         }
         return false;
     }
@@ -903,45 +967,61 @@ async function savePet(){
         
         console.log('✅ ИТОГО: фото =', petData.photos.length);
 
-        // Сохраняем питомца
-        console.log('Сохраняем питомца...');
-    if (petId) {
+        // Сохраняем питомца в памяти (БЕЗ сохранения на сервер пока)
+        console.log('Сохраняем питомца в памяти...');
+        console.log('📊 ДО сохранения: питомцев в базе =', db.petsData.length);
+        
+        if (petId) {
             console.log('Обновляем существующего питомца с ID:', petId);
             const result = await db.updatePet(petId, petData);
             console.log('Результат обновления:', result);
-    } else {
+        } else {
             console.log('Добавляем нового питомца');
             const result = await db.addPet(petData);
             console.log('Результат добавления:', result);
         }
         
-        console.log('Питомец сохранен в базе данных');
+        console.log('📊 ПОСЛЕ сохранения в памяти: питомцев в базе =', db.petsData.length);
+        console.log('📊 Все питомцы:', db.petsData.map(p => p.name));
         
-        // Очищаем поля файлов после сохранения
-        console.log('Очищаем поля формы...');
-        document.getElementById('petPhotos').value = '';
-        document.getElementById('photoPreview').innerHTML = '';
-        
-        // Очищаем накопленные файлы
-        accumulatedPhotos = [];
-        console.log('Поля очищены');
-    
-        console.log('Обновляем отображение питомцев...');
-        loadPets();
-        console.log('Закрываем модальное окно...');
-        closePetModal();
-        console.log('=== СОХРАНЕНИЕ ЗАВЕРШЕНО УСПЕШНО ===');
-        
-        // ВАЖНО: Сохраняем данные сразу после добавления/редактирования карточки
-        // Это гарантирует, что данные не пропадут при обновлении страницы
-        console.log('💾 Сохраняем данные после добавления карточки...');
+        // ВАЖНО: Сохраняем данные НА СЕРВЕР только ОДИН РАЗ после всех операций
+        console.log('💾 Сохраняем данные на сервер...');
         try {
-            const result = await store.saveData({ users: db.users, pets: db.petsData });
-            console.log('✅ Данные успешно сохранены. Результат:', result);
+            const dataToSave = { 
+                users: db.users, 
+                pets: db.petsData 
+            };
+            console.log('📦 Данные для сохранения:', {
+                usersCount: Object.keys(dataToSave.users).length,
+                petsCount: dataToSave.pets.length,
+                petNames: dataToSave.pets.map(p => p.name)
+            });
+            
+            const result = await store.saveData(dataToSave);
+            console.log('✅ Данные успешно сохранены на сервер. Результат:', result);
+            
+            // Очищаем поля файлов после УСПЕШНОГО сохранения
+            console.log('Очищаем поля формы...');
+            document.getElementById('petPhotos').value = '';
+            document.getElementById('photoPreview').innerHTML = '';
+            
+            // Очищаем накопленные файлы
+            accumulatedPhotos = [];
+            console.log('Поля очищены');
+        
+            console.log('Обновляем отображение питомцев...');
+            loadPets();
+            console.log('Закрываем модальное окно...');
+            closePetModal();
+            console.log('=== СОХРАНЕНИЕ ЗАВЕРШЕНО УСПЕШНО ===');
+            
             alert('Карточка успешно добавлена и сохранена!');
         } catch (error) {
-            console.error('❌ Ошибка сохранения данных:', error);
-            alert('Карточка добавлена, но произошла ошибка сохранения: ' + error.message);
+            console.error('❌ КРИТИЧЕСКАЯ ОШИБКА сохранения данных:', error);
+            console.error('Стек ошибки:', error.stack);
+            alert('ОШИБКА: Не удалось сохранить данные! ' + error.message + '\nДанные НЕ были сохранены. Попробуйте еще раз.');
+            // НЕ закрываем модальное окно при ошибке, чтобы пользователь мог попробовать снова
+            return;
         }
         
     } catch (error) {
@@ -953,7 +1033,32 @@ async function savePet(){
     }
 }
 
-async function deletePet(petId){ if(!isAdmin) return alert('Нет прав'); if(!confirm('Удалить питомца?')) return; await db.deletePet(petId); loadPets(); alert('Питомец удален!'); }
+async function deletePet(petId){ 
+    if(!isAdmin) return alert('Нет прав'); 
+    if(!confirm('Удалить питомца?')) return; 
+    
+    console.log('🗑️ Удаляем питомца с ID:', petId);
+    console.log('📊 ДО удаления: питомцев в базе =', db.petsData.length);
+    
+    const success = await db.deletePet(petId); 
+    
+    if (success) {
+        console.log('📊 ПОСЛЕ удаления: питомцев в базе =', db.petsData.length);
+        
+        // Сохраняем изменения на сервер
+        try {
+            await store.saveData({ users: db.users, pets: db.petsData });
+            console.log('✅ Изменения сохранены на сервер');
+            loadPets(); 
+            alert('Питомец удален!');
+        } catch (error) {
+            console.error('❌ Ошибка сохранения после удаления:', error);
+            alert('Ошибка сохранения: ' + error.message);
+        }
+    } else {
+        alert('Ошибка удаления питомца');
+    }
+}
 
 function loadPets(){
     console.log('=== ЗАГРУЗКА ПИТОМЦЕВ ===');
@@ -967,22 +1072,19 @@ function loadPets(){
     const petsGrid=document.getElementById('petsGrid'); 
     const puppiesGrid=document.getElementById('puppiesGrid'); 
     const graduatesGrid=document.getElementById('graduatesGrid'); 
-    const memoryGrid=document.getElementById('memoryGrid'); 
-    const videosGrid=document.getElementById('videosGrid');
+    const memoryGrid=document.getElementById('memoryGrid');
     
     console.log('Сетки найдены:', {
         petsGrid: !!petsGrid,
         puppiesGrid: !!puppiesGrid,
         graduatesGrid: !!graduatesGrid,
-        memoryGrid: !!memoryGrid,
-        videosGrid: !!videosGrid
+        memoryGrid: !!memoryGrid
     });
     
     if (petsGrid) petsGrid.innerHTML=''; 
     if (puppiesGrid) puppiesGrid.innerHTML=''; 
     if (graduatesGrid) graduatesGrid.innerHTML=''; 
-    if (memoryGrid) memoryGrid.innerHTML=''; 
-    if (videosGrid) videosGrid.innerHTML='';
+    if (memoryGrid) memoryGrid.innerHTML='';
     
     const pets = db.getAllPets();
     console.log('📊 Всего питомцев в базе:', pets.length);
@@ -1017,18 +1119,6 @@ function loadPets(){
         }
     });
     
-    // Отдельная загрузка для видео секции - только карточки с видео
-    if (videosGrid) {
-        pets.forEach(pet => {
-            const hasVideo = Array.isArray(pet.videos) ? pet.videos.length > 0 : !!pet.video;
-            if (hasVideo) {
-                const card = createPetCard(pet);
-                videosGrid.appendChild(card);
-                console.log('Добавлен в videosGrid:', pet.name);
-            }
-        });
-    }
-    
     console.log('=== ЗАГРУЗКА ПИТОМЦЕВ ЗАВЕРШЕНА ===');
     
     // Применяем фильтры после загрузки
@@ -1050,18 +1140,14 @@ function createPetCard(pet){
 
     let mediaContent='';
     const firstPhoto = Array.isArray(pet.photos) && pet.photos[0] ? pet.photos[0] : (pet.photo || null);
-    const hasVideo = Array.isArray(pet.videos) ? pet.videos.length>0 : !!pet.video;
     
     // Отладочная информация
     console.log(`Карточка ${pet.name}:`, {
         photos: pet.photos,
-        firstPhoto: firstPhoto,
-        hasVideo: hasVideo,
-        videos: pet.videos
+        firstPhoto: firstPhoto
     });
     
-    if (hasVideo){ const v = Array.isArray(pet.videos)?pet.videos[0]:pet.video; mediaContent = `<video src="${v}" controls></video>`; }
-    else if (firstPhoto && firstPhoto !== null && firstPhoto !== 'null'){ 
+    if (firstPhoto && firstPhoto !== null && firstPhoto !== 'null'){ 
         console.log(`Используем фото для ${pet.name}:`, firstPhoto);
         mediaContent = `<img src="${firstPhoto}" alt="${pet.name}" onerror="console.error('Ошибка загрузки изображения:', this.src); this.style.display='none'; this.nextElementSibling.style.display='block';"><i class="${pet.icon}" style="display:none;"></i>`; 
     }
@@ -1149,26 +1235,22 @@ function openViewModal(petId){
     const genderIcon = pet.gender==='male'?'♂':'♀'; 
     const statusText = pet.status==='breeding'?'Племенной': pet.status==='puppy'?'Щенок': pet.status==='graduate'?'Выпускник':'Память'; 
     const firstPhoto = Array.isArray(pet.photos)&&pet.photos[0]?pet.photos[0]:(pet.photo||null); 
-    const hasVideo = Array.isArray(pet.videos)?pet.videos.length>0:!!pet.video; 
-    const primaryMedia = hasVideo ? (Array.isArray(pet.videos)?pet.videos[0]:pet.video) : firstPhoto; 
-    const mediaHtml = hasVideo ? `<video src="${primaryMedia}" controls></video>` : (primaryMedia?`<img src="${primaryMedia}" alt="${pet.name}">`:`<i class="${pet.icon}"></i>`);
+    const primaryMedia = firstPhoto; 
+    const mediaHtml = primaryMedia ? `<img src="${primaryMedia}" alt="${pet.name}">` : `<i class="${pet.icon}"></i>`;
     
     // Галерея миниатюр с горизонтальным скроллом
     let thumbs = '';
     const allImages = Array.isArray(pet.photos)?pet.photos:[];
-    const allVideos = Array.isArray(pet.videos)?pet.videos:[];
-    const thumbItems = [ ...allImages.map(src=>({type:'img',src})), ...allVideos.map(src=>({type:'video',src})) ];
+    const thumbItems = [ ...allImages.map(src=>({type:'img',src})) ];
     
-    // Показываем галерею если есть больше одного медиа
+    // Показываем галерею если есть больше одного фото
     if (thumbItems.length > 1){
         thumbs = `
             <div style="margin-top:15px;">
-                <h4 style="margin-bottom:10px; color:#666;">Галерея (${thumbItems.length} файлов):</h4>
+                <h4 style="margin-bottom:10px; color:#666;">Галерея (${thumbItems.length} фото):</h4>
                 <div style="display:flex;gap:8px;overflow-x:auto;padding:10px;background:#f9f9f9;border-radius:8px;border:1px solid #e0e0e0;">
                     ${thumbItems.map((it, index)=> 
-                        it.type==='img' ? 
-                            `<img src="${it.src}" style="width:80px;height:80px;object-fit:cover;cursor:pointer;border-radius:8px;flex-shrink:0;border:2px solid transparent;" onclick="swapPrimaryMedia('${pet.id}','${it.src}','img')" title="Фото ${index+1}" onmouseover="this.style.border='2px solid #e74c3c'" onmouseout="this.style.border='2px solid transparent'">` : 
-                            `<video src="${it.src}" style="width:100px;height:70px;object-fit:cover;cursor:pointer;border-radius:8px;flex-shrink:0;border:2px solid transparent;" onclick="swapPrimaryMedia('${pet.id}','${it.src}','video')" title="Видео ${index+1}" onmouseover="this.style.border='2px solid #e74c3c'" onmouseout="this.style.border='2px solid transparent'"></video>`
+                        `<img src="${it.src}" style="width:80px;height:80px;object-fit:cover;cursor:pointer;border-radius:8px;flex-shrink:0;border:2px solid transparent;" onclick="swapPrimaryMedia('${pet.id}','${it.src}','img')" title="Фото ${index+1}" onmouseover="this.style.border='2px solid #e74c3c'" onmouseout="this.style.border='2px solid transparent'">`
                     ).join('')}
                 </div>
             </div>`;
@@ -1190,7 +1272,7 @@ function openViewModal(petId){
         </div>`;
     viewModal.style.display='block';
 }
-function swapPrimaryMedia(petId, src, type){ const el=document.getElementById('viewPrimaryMedia'); if(!el) return; el.innerHTML = type==='video' ? `<video src="${src}" controls></video>` : `<img src="${src}" alt="">`; }
+function swapPrimaryMedia(petId, src, type){ const el=document.getElementById('viewPrimaryMedia'); if(!el) return; el.innerHTML = `<img src="${src}" alt="">`; }
 
 function setupAdminFunctions(){
     // Функции для админа
@@ -1201,6 +1283,44 @@ function setupAdminFunctions(){
     };
     
     window.importData = function(){ document.getElementById('importFile').click(); };
+    
+    // Функция восстановления из localStorage
+    window.restoreFromLocalStorage = async function(){
+        if (!isAdmin) {
+            alert('Только администратор может восстанавливать данные!');
+            return;
+        }
+        
+        if (!confirm('Восстановить данные из локальной копии? Это перезапишет текущие данные.')) {
+            return;
+        }
+        
+        try {
+            const localData = await store.local.loadData();
+            console.log('📦 Данные из localStorage:', {
+                users: Object.keys(localData.users || {}).length,
+                pets: (localData.pets || []).length
+            });
+            
+            if ((localData.pets || []).length === 0) {
+                alert('В локальной копии нет данных для восстановления!');
+                return;
+            }
+            
+            db.users = localData.users || {};
+            db.petsData = localData.pets || [];
+            
+            // Сохраняем восстановленные данные
+            await store.saveData({ users: db.users, pets: db.petsData });
+            
+            loadPets();
+            alert(`Данные успешно восстановлены! Восстановлено ${db.petsData.length} карточек питомцев.`);
+            console.log('✅ Данные восстановлены из localStorage');
+        } catch (error) {
+            console.error('❌ Ошибка восстановления:', error);
+            alert('Ошибка восстановления данных: ' + error.message);
+        }
+    };
     
     // Обработчик импорта файлов
     const importFile = document.getElementById('importFile');
