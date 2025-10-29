@@ -21,26 +21,60 @@ let accumulatedPhotos = [];
 
 // Утилиты изображений: ресайз под карточки (макс ширина x высота)
 async function resizeImage(file, maxW = 1200, maxH = 1200, mime = 'image/jpeg', quality = 0.85) {
+    console.log('📸 Начинаем обработку изображения:', {
+        name: file.name,
+        size: (file.size / 1024 / 1024).toFixed(2) + ' МБ',
+        type: file.type
+    });
+    
+    // АГРЕССИВНОЕ СЖАТИЕ ДЛЯ БОЛЬШИХ ФАЙЛОВ
+    // Если файл больше 5 МБ - используем более агрессивные настройки
+    if (file.size > 5 * 1024 * 1024) {
+        console.warn('⚠️ Большой файл! Применяем агрессивное сжатие');
+        maxW = 800;
+        maxH = 800;
+        quality = 0.7;
+    }
+    
     return new Promise((resolve, reject) => {
         const img = new Image();
         const reader = new FileReader();
         reader.onload = e => {
             img.onload = () => {
                 let { width, height } = img;
+                console.log('📐 Исходный размер:', width, 'x', height);
+                
                 const ratio = Math.min(maxW / width, maxH / height, 1);
                 const canvas = document.createElement('canvas');
                 canvas.width = Math.round(width * ratio);
                 canvas.height = Math.round(height * ratio);
+                
+                console.log('📐 Новый размер:', canvas.width, 'x', canvas.height);
+                console.log('📊 Качество:', quality);
+                
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
                 canvas.toBlob(blob => {
-                    resolve(blob);
+                    if (blob) {
+                        console.log('✅ Изображение обработано:', (blob.size / 1024).toFixed(2) + ' КБ');
+                        resolve(blob);
+                    } else {
+                        console.error('❌ Ошибка: не удалось создать blob');
+                        reject(new Error('Не удалось обработать изображение'));
+                    }
                 }, mime, quality);
             };
-            img.onerror = reject;
+            img.onerror = (error) => {
+                console.error('❌ Ошибка загрузки изображения:', error);
+                reject(error);
+            };
             img.src = e.target.result;
         };
-        reader.onerror = reject;
+        reader.onerror = (error) => {
+            console.error('❌ Ошибка чтения файла:', error);
+            reject(error);
+        };
         reader.readAsDataURL(file);
     });
 }
@@ -493,20 +527,23 @@ class Database {
     }
     
     updatePet(petId, petData) {
-        const index = this.petsData.findIndex(p => p.id === petId);
+        // ИСПРАВЛЕНИЕ: Сравниваем и строки, и числа
+        const index = this.petsData.findIndex(p => p.id == petId || p.id === Number(petId) || p.id === String(petId));
         if (index !== -1) {
-            this.petsData[index] = { ...this.petsData[index], ...petData };
+            this.petsData[index] = { ...this.petsData[index], ...petData, id: this.petsData[index].id };
             // ЭКСТРЕННЫЙ БЭКАП
             this._emergencyBackup();
             // НЕ сохраняем автоматически - это будет сделано вручную после завершения всех операций
             console.log('✅ Питомец обновлен в массиве, текущее количество:', this.petsData.length);
             return true;
         }
+        console.error('❌ Не найден питомец с ID:', petId, 'Все ID:', this.petsData.map(p => p.id));
         return false;
     }
     
     deletePet(petId) {
-        const index = this.petsData.findIndex(p => p.id === petId);
+        // ИСПРАВЛЕНИЕ: Сравниваем и строки, и числа
+        const index = this.petsData.findIndex(p => p.id == petId || p.id === Number(petId) || p.id === String(petId));
         if (index !== -1) {
             this.petsData.splice(index, 1);
             // ЭКСТРЕННЫЙ БЭКАП
@@ -515,6 +552,7 @@ class Database {
             console.log('✅ Питомец удален из массива, текущее количество:', this.petsData.length);
             return true;
         }
+        console.error('❌ Не найден питомец для удаления с ID:', petId);
         return false;
     }
 }
@@ -890,9 +928,40 @@ function setupModals(){
     const photosInput = document.getElementById('petPhotos');
     if (photosInput) photosInput.addEventListener('change', function(e){
         const newFiles = Array.from(e.target.files || []);
+        
+        // ПРОВЕРКА РАЗМЕРА И КОЛИЧЕСТВА
+        let totalSize = 0;
+        let oversizedFiles = [];
+        
+        newFiles.forEach(file => {
+            totalSize += file.size;
+            if (file.size > 10 * 1024 * 1024) { // Больше 10 МБ
+                oversizedFiles.push(file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' МБ)');
+            }
+        });
+        
+        // Предупреждение о больших файлах
+        if (oversizedFiles.length > 0) {
+            alert(`⚠️ ВНИМАНИЕ! Обнаружены большие файлы:\n\n${oversizedFiles.join('\n')}\n\nФайлы будут автоматически сжаты для ускорения загрузки.`);
+        }
+        
+        // Ограничение на количество фото
+        if (accumulatedPhotos.length + newFiles.length > 10) {
+            alert('⚠️ Максимум 10 фотографий на карточку!\n\nВыберите наиболее важные фотографии.');
+            return;
+        }
+        
+        // Ограничение на общий размер (перед сжатием)
+        if (totalSize > 50 * 1024 * 1024) { // 50 МБ
+            alert('⚠️ Слишком большой общий размер файлов!\n\nВыберите меньше фотографий или файлы меньшего размера.');
+            return;
+        }
+        
         accumulatedPhotos = [...accumulatedPhotos, ...newFiles];
         updatePhotoPreview();
-        console.log('Накоплено фото:', accumulatedPhotos.length);
+        
+        console.log('📸 Накоплено фото:', accumulatedPhotos.length);
+        console.log('📊 Общий размер (до сжатия):', (totalSize / 1024 / 1024).toFixed(2), 'МБ');
     });
 }
 
@@ -1040,13 +1109,17 @@ async function savePet(){
         // ВАЖНО: Если редактируем существующего питомца - загружаем его данные
         let petData;
         if (petId) {
-            console.log('Редактируем существующего питомца, загружаем данные...');
-            const existingPet = db.petsData.find(p => p.id === petId);
+            console.log('Редактируем существующего питомца, ID:', petId, 'тип:', typeof petId);
+            
+            // ИСПРАВЛЕНИЕ: Сравниваем и строки, и числа (ID может быть как строкой, так и числом)
+            const existingPet = db.petsData.find(p => p.id == petId || p.id === Number(petId) || p.id === String(petId));
+            
             if (existingPet) {
-                console.log('Найден существующий питомец:', existingPet);
+                console.log('✅ Найден существующий питомец:', existingPet);
                 // Создаем копию существующих данных
                 petData = {
                     ...existingPet,
+                    id: existingPet.id, // ВАЖНО: Сохраняем исходный ID!
                     name: formData.get('name') || document.getElementById('petName').value,
                     breed: formData.get('breed') || document.getElementById('petBreed').value,
                     age: formData.get('age') || document.getElementById('petAge').value,
@@ -1059,8 +1132,9 @@ async function savePet(){
                 };
                 console.log('Данные питомца после загрузки существующих:', petData);
             } else {
-                console.error('Питомец с ID', petId, 'не найден!');
-                alert('Ошибка: питомец не найден!');
+                console.error('❌ Питомец с ID', petId, 'не найден!');
+                console.log('Все ID в базе:', db.petsData.map(p => ({ id: p.id, type: typeof p.id, name: p.name })));
+                alert('Ошибка: питомец не найден!\n\nПопробуйте обновить страницу и повторить.');
                 return;
             }
         } else {
@@ -1084,26 +1158,52 @@ async function savePet(){
         console.log('📸 Проверка фото: накоплено =', accumulatedPhotos.length, ', существующих =', petData.photos.length);
         if (accumulatedPhotos.length > 0) {
             console.log('Обрабатываем фото:', accumulatedPhotos.length, 'файлов');
+            
+            // Показываем прогресс
+            const totalPhotos = accumulatedPhotos.length;
+            let processedPhotos = 0;
+            
             for (let i = 0; i < accumulatedPhotos.length; i++) {
                 const file = accumulatedPhotos[i];
-                console.log(`Обрабатываем фото ${i+1}/${accumulatedPhotos.length}:`, file.name);
+                
+                // Обновляем прогресс
+                processedPhotos++;
+                console.log(`📸 [${processedPhotos}/${totalPhotos}] Обрабатываем: ${file.name}`);
+                
                 try {
+                    // Показываем пользователю прогресс
+                    const progressText = `Обработка фото ${processedPhotos} из ${totalPhotos}...`;
+                    console.log('📊', progressText);
+                    
                     const resized = await resizeImage(file);
-                    console.log(`Обрабатываем файл ${i+1}:`, file.name, 'тип:', file.type, 'размер:', file.size);
-                    console.log(`Файл ${i+1} обработан, результат:`, resized, 'тип результата:', typeof resized, 'конструктор:', resized.constructor.name);
+                    console.log(`✅ Файл ${i+1} обработан`);
                     
                     const extension = file.name.split('.').pop().replace(/\s+/g, ''); // Убираем пробелы
                     const path = `pets/images/${Date.now()}_${Math.random().toString(36).slice(2)}_${i}.${extension}`;
-                    console.log(`Загружаем файл ${i+1} по пути:`, path);
+                    
+                    console.log(`💾 Загружаем файл ${i+1} на сервер...`);
                     const url = await store.uploadFile(resized, path);
-                    petData.photos.push(url);
-                    console.log(`Фото ${i+1} сохранено:`, url);
+                    
+                    if (url && url !== 'null' && url !== null) {
+                        petData.photos.push(url);
+                        console.log(`✅ [${processedPhotos}/${totalPhotos}] Фото сохранено успешно`);
+                    } else {
+                        console.warn(`⚠️ [${processedPhotos}/${totalPhotos}] Фото НЕ сохранено (пустой URL)`);
+                    }
                 } catch (error) {
-                    console.warn(`Ошибка загрузки фото ${i+1}:`, error.message);
-                    // Пропускаем проблемное фото
+                    console.error(`❌ [${processedPhotos}/${totalPhotos}] Ошибка:`, error.message);
+                    alert(`⚠️ Ошибка загрузки фото ${file.name}:\n${error.message}\n\nПродолжаем с остальными фото...`);
                 }
             }
-            console.log('✅ Фото обработаны. Итого фото:', petData.photos.length);
+            
+            console.log('✅ Обработка фото завершена. Итого сохранено:', petData.photos.length, 'из', totalPhotos);
+            
+            if (petData.photos.length === 0) {
+                console.warn('⚠️ НИ ОДНО ФОТО НЕ БЫЛО СОХРАНЕНО!');
+                alert('⚠️ ВНИМАНИЕ!\n\nНе удалось загрузить фотографии.\n\nВозможные причины:\n- Слишком большой размер файлов\n- Проблемы с интернетом\n- Неподдерживаемый формат\n\nПопробуйте:\n- Выбрать фото меньшего размера\n- Проверить интернет-соединение');
+            } else if (petData.photos.length < totalPhotos) {
+                alert(`⚠️ Загружено ${petData.photos.length} из ${totalPhotos} фото.\n\nНекоторые фото не удалось загрузить.\nПроверьте консоль для подробностей.`);
+            }
         } else {
             console.log('ℹ️ Новых фото нет, сохраняем существующие');
         }
@@ -1115,9 +1215,17 @@ async function savePet(){
         console.log('📊 ДО сохранения: питомцев в базе =', db.petsData.length);
         
         if (petId) {
-            console.log('Обновляем существующего питомца с ID:', petId);
-            const result = await db.updatePet(petId, petData);
+            console.log('Обновляем существующего питомца с ID:', petId, 'тип:', typeof petId);
+            console.log('ID из petData:', petData.id, 'тип:', typeof petData.id);
+            // Используем ID из petData (который мы сохранили из existingPet)
+            const result = await db.updatePet(petData.id, petData);
             console.log('Результат обновления:', result);
+            
+            if (!result) {
+                console.error('❌ ОШИБКА: Не удалось обновить питомца!');
+                alert('Ошибка обновления питомца!\n\nПопробуйте обновить страницу и повторить.');
+                return;
+            }
         } else {
             console.log('Добавляем нового питомца');
             const result = await db.addPet(petData);
@@ -1409,7 +1517,8 @@ function contactAboutPet(petName){ alert(`Спасибо за интерес к 
 window.addEventListener('scroll', function(){ const navbar=document.querySelector('.navbar'); if(window.scrollY>100){ navbar.style.background='rgba(255, 255, 255, 0.95)'; navbar.style.backdropFilter='blur(10px)'; } else { navbar.style.background='#fff'; navbar.style.backdropFilter='none'; } });
 
 function openViewModal(petId){ 
-    const pet = db.getAllPets().find(p=>p.id===petId); 
+    // ИСПРАВЛЕНИЕ: Сравниваем и строки, и числа
+    const pet = db.getAllPets().find(p => p.id == petId || p.id === Number(petId) || p.id === String(petId)); 
     if(!pet) return; 
     const viewModal=document.getElementById('viewModal'); 
     const viewContent=document.getElementById('viewContent'); 
@@ -1656,3 +1765,4 @@ const realtimeSync = new RealtimeSync();
 window.realtimeSync = realtimeSync;
 window.db = db;
 window.store = store;
+
