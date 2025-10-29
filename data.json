@@ -140,6 +140,17 @@
       "description": "45tfryhg",
       "photos": [],
       "id": 1761697918011
+    },
+    {
+      "name": "Шарик",
+      "breed": "А5",
+      "age": "2",
+      "type": "newfoundland",
+      "gender": "male",
+      "status": "breeding",
+      "description": "Хороший",
+      "photos": [],
+      "id": 1761703394076
     }
   ]
 }
