@@ -314,6 +314,43 @@ class Database {
     constructor() {
         this.users = {};
         this.petsData = [];
+        
+        // АГРЕССИВНАЯ ЗАЩИТА: Автосохранение в localStorage при любом изменении
+        this._setupAutoBackup();
+    }
+    
+    _setupAutoBackup() {
+        // Перехватываем изменения массива petsData
+        const self = this;
+        const handler = {
+            set(target, property, value) {
+                target[property] = value;
+                // При любом изменении - сохраняем в localStorage
+                self._emergencyBackup();
+                return true;
+            }
+        };
+        
+        // Создаем Proxy для отслеживания изменений
+        this._originalPetsData = this.petsData;
+    }
+    
+    _emergencyBackup() {
+        // Экстренное сохранение в localStorage
+        try {
+            if (this.petsData && this.petsData.length > 0) {
+                const backupData = {
+                    users: this.users,
+                    pets: this.petsData,
+                    timestamp: Date.now(),
+                    backupType: 'emergency'
+                };
+                localStorage.setItem('pitomnik_emergency_backup', JSON.stringify(backupData));
+                console.log('💾 Экстренная резервная копия сохранена:', this.petsData.length, 'карточек');
+            }
+        } catch (error) {
+            console.error('❌ Ошибка экстренного сохранения:', error);
+        }
     }
     
     async load() {
@@ -326,25 +363,51 @@ class Database {
             const data = await store.loadData();
             console.log('📥 Данные получены от store.loadData():', data);
             
-            // КРИТИЧЕСКАЯ ПРОВЕРКА: Если получили пустые данные, пытаемся восстановить из localStorage
+            // КРИТИЧЕСКАЯ ПРОВЕРКА: Если получили пустые данные, пытаемся восстановить
             if ((!data.pets || data.pets.length === 0) && (!data.users || Object.keys(data.users).length === 0)) {
                 console.warn('⚠️ ВНИМАНИЕ! Получены пустые данные от store.loadData()');
-                console.log('🔍 Проверяем localStorage...');
                 
-                const localData = await store.local.loadData();
-                console.log('📦 Данные из localStorage:', {
-                    users: Object.keys(localData.users || {}).length,
-                    pets: (localData.pets || []).length
-                });
+                // УРОВЕНЬ 1: Проверяем экстренную резервную копию
+                console.log('🔍 Проверяем экстренную резервную копию...');
+                const emergencyData = localStorage.getItem('pitomnik_emergency_backup');
                 
-                if (localData.pets && localData.pets.length > 0) {
-                    console.log('✅ ВОССТАНОВЛЕНИЕ: Используем данные из localStorage');
-                    this.users = localData.users || {};
-                    this.petsData = localData.pets || [];
-                } else {
-                    console.log('ℹ️ В localStorage тоже нет данных, начинаем с пустой базы');
-                    this.users = data.users || {};
-                    this.petsData = data.pets || [];
+                if (emergencyData) {
+                    try {
+                        const emergency = JSON.parse(emergencyData);
+                        if (emergency.pets && emergency.pets.length > 0) {
+                            console.log('✅ ВОССТАНОВЛЕНИЕ: Используем экстренную резервную копию');
+                            console.log('📦 Восстанавливаем', emergency.pets.length, 'карточек');
+                            this.users = emergency.users || {};
+                            this.petsData = emergency.pets || [];
+                            
+                            alert(`🚨 АВТОМАТИЧЕСКОЕ ВОССТАНОВЛЕНИЕ!\n\nДанные были восстановлены из экстренной резервной копии.\n\nВосстановлено: ${emergency.pets.length} карточек\n\nВремя создания копии: ${new Date(emergency.timestamp).toLocaleString()}`);
+                        } else {
+                            throw new Error('Экстренная копия пуста');
+                        }
+                    } catch (e) {
+                        console.warn('❌ Ошибка чтения экстренной копии:', e);
+                        // Переходим к уровню 2
+                    }
+                }
+                
+                // УРОВЕНЬ 2: Если экстренной копии нет - проверяем обычный localStorage
+                if (!this.petsData || this.petsData.length === 0) {
+                    console.log('🔍 Проверяем обычный localStorage...');
+                    const localData = await store.local.loadData();
+                    console.log('📦 Данные из localStorage:', {
+                        users: Object.keys(localData.users || {}).length,
+                        pets: (localData.pets || []).length
+                    });
+                    
+                    if (localData.pets && localData.pets.length > 0) {
+                        console.log('✅ ВОССТАНОВЛЕНИЕ: Используем данные из localStorage');
+                        this.users = localData.users || {};
+                        this.petsData = localData.pets || [];
+                    } else {
+                        console.log('ℹ️ Нигде нет данных, начинаем с пустой базы');
+                        this.users = data.users || {};
+                        this.petsData = data.pets || [];
+                    }
                 }
             } else {
                 this.users = data.users || {};
@@ -422,6 +485,8 @@ class Database {
     addPet(petData) {
         petData.id = petData.id || Date.now();
         this.petsData.push(petData);
+        // ЭКСТРЕННЫЙ БЭКАП
+        this._emergencyBackup();
         // НЕ сохраняем автоматически - это будет сделано вручную после завершения всех операций
         console.log('✅ Питомец добавлен в массив, текущее количество:', this.petsData.length);
         return true;
@@ -431,6 +496,8 @@ class Database {
         const index = this.petsData.findIndex(p => p.id === petId);
         if (index !== -1) {
             this.petsData[index] = { ...this.petsData[index], ...petData };
+            // ЭКСТРЕННЫЙ БЭКАП
+            this._emergencyBackup();
             // НЕ сохраняем автоматически - это будет сделано вручную после завершения всех операций
             console.log('✅ Питомец обновлен в массиве, текущее количество:', this.petsData.length);
             return true;
@@ -442,6 +509,8 @@ class Database {
         const index = this.petsData.findIndex(p => p.id === petId);
         if (index !== -1) {
             this.petsData.splice(index, 1);
+            // ЭКСТРЕННЫЙ БЭКАП
+            this._emergencyBackup();
             // НЕ сохраняем автоматически - это будет сделано вручную после завершения всех операций
             console.log('✅ Питомец удален из массива, текущее количество:', this.petsData.length);
             return true;
@@ -1494,6 +1563,61 @@ function setupAdminFunctions(){
         
         console.log(info);
         alert(info);
+    };
+    
+    // 🆕🆕🆕 ЭКСТРЕННОЕ ВОССТАНОВЛЕНИЕ из emergency backup
+    window.emergencyRestore = async function(){
+        console.log('🚨 ЭКСТРЕННОЕ ВОССТАНОВЛЕНИЕ...');
+        
+        try {
+            const emergencyData = localStorage.getItem('pitomnik_emergency_backup');
+            
+            if (!emergencyData) {
+                alert('❌ Экстренная резервная копия не найдена!\n\nПопробуйте:\n- restoreFromSnapshot()\n- restoreFromLocalStorage()');
+                return;
+            }
+            
+            const backup = JSON.parse(emergencyData);
+            
+            console.log('📦 Найдена экстренная копия:', {
+                pets: backup.pets.length,
+                timestamp: new Date(backup.timestamp).toLocaleString(),
+                age: Math.round((Date.now() - backup.timestamp) / 1000) + ' секунд назад'
+            });
+            
+            if (!confirm(`🚨 ЭКСТРЕННОЕ ВОССТАНОВЛЕНИЕ\n\nНайдена резервная копия:\n\n🐕 Питомцев: ${backup.pets.length}\n⏰ Создана: ${new Date(backup.timestamp).toLocaleString()}\n⏱️ Возраст: ${Math.round((Date.now() - backup.timestamp) / 1000)} секунд назад\n\nВосстановить?`)) {
+                return;
+            }
+            
+            // Восстанавливаем данные
+            db.users = backup.users || {};
+            db.petsData = backup.pets || [];
+            
+            // Обновляем snapshot
+            window.lastKnownGoodData = {
+                users: JSON.parse(JSON.stringify(db.users)),
+                pets: JSON.parse(JSON.stringify(db.petsData)),
+                timestamp: Date.now()
+            };
+            
+            // Сохраняем на сервер (если есть токен)
+            if (isAdmin && store.github?.token) {
+                console.log('💾 Сохраняем на сервер...');
+                await store.saveData({ users: db.users, pets: db.petsData });
+                console.log('✅ Сохранено на сервер');
+            }
+            
+            // Обновляем отображение
+            loadPets();
+            
+            alert(`✅ ДАННЫЕ ВОССТАНОВЛЕНЫ!\n\nВосстановлено: ${db.petsData.length} карточек\n\n${isAdmin && store.github?.token ? '✅ Данные сохранены на сервер' : '⚠️ Синхронизируйте с сервером вручную!'}`);
+            
+            console.log('✅ Экстренное восстановление завершено успешно');
+            
+        } catch (error) {
+            console.error('❌ Ошибка экстренного восстановления:', error);
+            alert('Ошибка: ' + error.message);
+        }
     };
     
     // Обработчик импорта файлов
