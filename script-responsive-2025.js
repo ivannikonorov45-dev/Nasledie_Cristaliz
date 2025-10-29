@@ -20,6 +20,7 @@ let syncInProgress = false;
 let accumulatedPhotos = [];
 
 // Утилиты изображений: ресайз под карточки (макс ширина x высота)
+// ИСПРАВЛЕНО: Добавлена поддержка EXIF ориентации для фото с телефонов
 async function resizeImage(file, maxW = 1200, maxH = 1200, mime = 'image/jpeg', quality = 0.85) {
     console.log('📸 Начинаем обработку изображения:', {
         name: file.name,
@@ -39,10 +40,28 @@ async function resizeImage(file, maxW = 1200, maxH = 1200, mime = 'image/jpeg', 
     return new Promise((resolve, reject) => {
         const img = new Image();
         const reader = new FileReader();
+        
         reader.onload = e => {
+            // 🔥 ИСПРАВЛЕНИЕ: Получаем EXIF ориентацию
+            const arrayBuffer = e.target.result;
+            const orientation = getOrientation(arrayBuffer);
+            console.log('🔄 EXIF ориентация:', orientation);
+            
+            // Создаем Data URL для загрузки изображения
+            const blob = new Blob([arrayBuffer], { type: file.type });
+            const dataUrl = URL.createObjectURL(blob);
+            
             img.onload = () => {
                 let { width, height } = img;
                 console.log('📐 Исходный размер:', width, 'x', height);
+                
+                // 🔥 ИСПРАВЛЕНИЕ: Учитываем ориентацию при расчете размеров
+                // Ориентации 5, 6, 7, 8 означают поворот на 90 или 270 градусов
+                const needsRotation = orientation >= 5 && orientation <= 8;
+                if (needsRotation) {
+                    [width, height] = [height, width]; // Меняем местами для поворота
+                    console.log('🔄 Размер после учета ориентации:', width, 'x', height);
+                }
                 
                 const ratio = Math.min(maxW / width, maxH / height, 1);
                 const canvas = document.createElement('canvas');
@@ -53,7 +72,55 @@ async function resizeImage(file, maxW = 1200, maxH = 1200, mime = 'image/jpeg', 
                 console.log('📊 Качество:', quality);
                 
                 const ctx = canvas.getContext('2d');
+                
+                // 🔥 ИСПРАВЛЕНИЕ: Применяем трансформации в зависимости от ориентации
+                switch(orientation) {
+                    case 2:
+                        // Горизонтальное отражение
+                        ctx.transform(-1, 0, 0, 1, canvas.width, 0);
+                        break;
+                    case 3:
+                        // Поворот на 180°
+                        ctx.transform(-1, 0, 0, -1, canvas.width, canvas.height);
+                        break;
+                    case 4:
+                        // Вертикальное отражение
+                        ctx.transform(1, 0, 0, -1, 0, canvas.height);
+                        break;
+                    case 5:
+                        // Вертикальное отражение + поворот 90° вправо
+                        canvas.width = Math.round(height * ratio);
+                        canvas.height = Math.round(width * ratio);
+                        ctx.transform(0, 1, 1, 0, 0, 0);
+                        break;
+                    case 6:
+                        // Поворот на 90° вправо (САМЫЙ ЧАСТЫЙ СЛУЧАЙ ДЛЯ ТЕЛЕФОНОВ!)
+                        canvas.width = Math.round(height * ratio);
+                        canvas.height = Math.round(width * ratio);
+                        ctx.transform(0, 1, -1, 0, canvas.width, 0);
+                        break;
+                    case 7:
+                        // Горизонтальное отражение + поворот 90° вправо
+                        canvas.width = Math.round(height * ratio);
+                        canvas.height = Math.round(width * ratio);
+                        ctx.transform(0, -1, -1, 0, canvas.width, canvas.height);
+                        break;
+                    case 8:
+                        // Поворот на 90° влево
+                        canvas.width = Math.round(height * ratio);
+                        canvas.height = Math.round(width * ratio);
+                        ctx.transform(0, -1, 1, 0, 0, canvas.height);
+                        break;
+                    default:
+                        // Ориентация 1 или неизвестная - без изменений
+                        break;
+                }
+                
+                // Рисуем изображение с учетом трансформаций
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                // Освобождаем память
+                URL.revokeObjectURL(dataUrl);
                 
                 canvas.toBlob(blob => {
                     if (blob) {
@@ -65,18 +132,108 @@ async function resizeImage(file, maxW = 1200, maxH = 1200, mime = 'image/jpeg', 
                     }
                 }, mime, quality);
             };
+            
             img.onerror = (error) => {
                 console.error('❌ Ошибка загрузки изображения:', error);
+                URL.revokeObjectURL(dataUrl);
                 reject(error);
             };
-            img.src = e.target.result;
+            
+            img.src = dataUrl;
         };
+        
         reader.onerror = (error) => {
             console.error('❌ Ошибка чтения файла:', error);
             reject(error);
         };
-        reader.readAsDataURL(file);
+        
+        // Читаем как ArrayBuffer для получения EXIF данных
+        reader.readAsArrayBuffer(file);
     });
+}
+
+// 🔥 НОВАЯ ФУНКЦИЯ: Получение EXIF ориентации из ArrayBuffer
+function getOrientation(arrayBuffer) {
+    try {
+        const view = new DataView(arrayBuffer);
+        
+        // Проверяем JPEG сигнатуру
+        if (view.getUint16(0, false) !== 0xFFD8) {
+            console.log('📷 Не JPEG файл, ориентация = 1 (по умолчанию)');
+            return 1;
+        }
+        
+        const length = view.byteLength;
+        let offset = 2;
+        
+        while (offset < length) {
+            // Проверяем маркер
+            if (view.getUint16(offset, false) === 0xFFE1) {
+                // APP1 маркер (EXIF)
+                offset += 2;
+                
+                // Проверяем EXIF сигнатуру
+                const exifSignature = view.getUint32(offset + 2, false);
+                if (exifSignature !== 0x45786966) { // "Exif"
+                    console.log('📷 EXIF данные не найдены');
+                    return 1;
+                }
+                
+                // Пропускаем EXIF сигнатуру и нулевой байт
+                offset += 6;
+                
+                // Определяем порядок байтов (little/big endian)
+                const tiffOffset = offset;
+                const byteOrder = view.getUint16(offset, false);
+                const littleEndian = byteOrder === 0x4949; // "II" = little endian, "MM" = big endian
+                
+                // Пропускаем TIFF заголовок
+                offset += 2;
+                
+                // Проверяем TIFF магическое число (должно быть 42)
+                const magic = view.getUint16(offset, littleEndian);
+                if (magic !== 42) {
+                    console.log('📷 Неверный TIFF заголовок');
+                    return 1;
+                }
+                offset += 2;
+                
+                // Получаем смещение до IFD (Image File Directory)
+                const ifdOffset = view.getUint32(offset, littleEndian);
+                offset = tiffOffset + ifdOffset;
+                
+                // Читаем количество тегов в IFD
+                const tagCount = view.getUint16(offset, littleEndian);
+                offset += 2;
+                
+                // Ищем тег ориентации (0x0112)
+                for (let i = 0; i < tagCount; i++) {
+                    const tag = view.getUint16(offset, littleEndian);
+                    
+                    if (tag === 0x0112) {
+                        // Нашли тег ориентации!
+                        const orientation = view.getUint16(offset + 8, littleEndian);
+                        console.log('✅ Найдена EXIF ориентация:', orientation);
+                        return orientation;
+                    }
+                    
+                    offset += 12; // Каждый тег занимает 12 байт
+                }
+                
+                console.log('📷 Тег ориентации не найден в EXIF');
+                return 1;
+            }
+            
+            // Переходим к следующему маркеру
+            offset += 2 + view.getUint16(offset + 2, false);
+        }
+        
+        console.log('📷 EXIF данные не найдены в файле');
+        return 1;
+    } catch (error) {
+        console.error('❌ Ошибка чтения EXIF:', error);
+        return 1; // По умолчанию возвращаем нормальную ориентацию
+    }
 }
 
 // Унифицированный стор с GitHub Storage
@@ -980,13 +1137,41 @@ function setupModals(){
         // ПРОВЕРКА РАЗМЕРА И КОЛИЧЕСТВА
         let totalSize = 0;
         let oversizedFiles = [];
+        let heicFiles = [];
+        let unsupportedFiles = [];
         
         newFiles.forEach(file => {
             totalSize += file.size;
+            
+            // Проверяем формат файла
+            const fileName = file.name.toLowerCase();
+            const fileType = file.type.toLowerCase();
+            
+            // Проверяем на HEIC/HEIF
+            if (fileName.endsWith('.heic') || fileName.endsWith('.heif') || fileType.includes('heic') || fileType.includes('heif')) {
+                heicFiles.push(file.name);
+            }
+            
+            // Проверяем на поддерживаемые форматы
+            if (!fileType.startsWith('image/') && !fileName.match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/i)) {
+                unsupportedFiles.push(file.name);
+            }
+            
             if (file.size > 10 * 1024 * 1024) { // Больше 10 МБ
                 oversizedFiles.push(file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' МБ)');
             }
         });
+        
+        // Предупреждение о HEIC файлах
+        if (heicFiles.length > 0) {
+            alert(`📱 ОБНАРУЖЕНЫ HEIC ФАЙЛЫ!\n\nФайлы:\n${heicFiles.join('\n')}\n\n⚠️ Формат HEIC (iPhone) может не поддерживаться!\n\n✅ РЕШЕНИЕ:\n1. На iPhone: Настройки → Камера → Форматы → "Наиболее совместимые"\n2. Или конвертируйте фото в JPEG перед загрузкой\n\nПопытаемся загрузить, но если не получится - используйте JPEG!`);
+        }
+        
+        // Предупреждение о неподдерживаемых файлах
+        if (unsupportedFiles.length > 0) {
+            alert(`❌ НЕПОДДЕРЖИВАЕМЫЕ ФАЙЛЫ!\n\n${unsupportedFiles.join('\n')}\n\nПожалуйста, выберите только фотографии (JPEG, PNG, WebP).`);
+            return;
+        }
         
         // Предупреждение о больших файлах
         if (oversizedFiles.length > 0) {
@@ -1234,24 +1419,53 @@ async function savePet(){
                     const progressText = `Обработка фото ${processedPhotos} из ${totalPhotos}...`;
                     console.log('📊', progressText);
                     
-                    const resized = await resizeImage(file);
-                    console.log(`✅ Файл ${i+1} обработан`);
+                    // Проверяем, является ли файл изображением
+                    if (!file.type.startsWith('image/') && !file.name.match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/i)) {
+                        throw new Error(`Файл "${file.name}" не является изображением`);
+                    }
                     
-                    const extension = file.name.split('.').pop().replace(/\s+/g, ''); // Убираем пробелы
+                    // Проверяем размер файла
+                    if (file.size === 0) {
+                        throw new Error(`Файл "${file.name}" пуст (0 байт)`);
+                    }
+                    
+                    if (file.size > 50 * 1024 * 1024) {
+                        throw new Error(`Файл "${file.name}" слишком большой (${(file.size / 1024 / 1024).toFixed(2)} МБ). Максимум: 50 МБ`);
+                    }
+                    
+                    // Обрабатываем изображение
+                    console.log(`🔄 Обрабатываем: ${file.name} (${(file.size / 1024).toFixed(2)} КБ)`);
+                    const resized = await resizeImage(file);
+                    console.log(`✅ Файл ${i+1} обработан, размер после сжатия: ${(resized.size / 1024).toFixed(2)} КБ`);
+                    
+                    const extension = 'jpg'; // Всегда сохраняем как JPEG для совместимости
                     const path = `pets/images/${Date.now()}_${Math.random().toString(36).slice(2)}_${i}.${extension}`;
                     
                     console.log(`💾 Загружаем файл ${i+1} на сервер...`);
                     const url = await store.uploadFile(resized, path);
                     
-                    if (url && url !== 'null' && url !== null) {
+                    if (url && url !== 'null' && url !== null && url.length > 0) {
                         petData.photos.push(url);
                         console.log(`✅ [${processedPhotos}/${totalPhotos}] Фото сохранено успешно`);
                     } else {
                         console.warn(`⚠️ [${processedPhotos}/${totalPhotos}] Фото НЕ сохранено (пустой URL)`);
+                        throw new Error('Сервер вернул пустой URL');
                     }
                 } catch (error) {
-                    console.error(`❌ [${processedPhotos}/${totalPhotos}] Ошибка:`, error.message);
-                    alert(`⚠️ Ошибка загрузки фото ${file.name}:\n${error.message}\n\nПродолжаем с остальными фото...`);
+                    console.error(`❌ [${processedPhotos}/${totalPhotos}] Ошибка обработки "${file.name}":`, error);
+                    
+                    // Определяем тип ошибки и показываем соответствующее сообщение
+                    let errorMessage = error.message;
+                    
+                    if (error.message.includes('не является изображением')) {
+                        errorMessage = `"${file.name}" - не является изображением.\n\nВыберите файлы формата JPEG, PNG или WebP.`;
+                    } else if (error.message.includes('Не удалось обработать изображение')) {
+                        errorMessage = `"${file.name}" - не удалось обработать.\n\n📱 Если это фото с iPhone в формате HEIC:\n\nПерейдите в Настройки → Камера → Форматы → "Наиболее совместимые"\n\nИли конвертируйте фото в JPEG.`;
+                    } else if (error.message.includes('слишком большой')) {
+                        errorMessage = `"${file.name}" - файл слишком большой.\n\nВыберите файл меньшего размера или сожмите его перед загрузкой.`;
+                    }
+                    
+                    alert(`⚠️ ОШИБКА ЗАГРУЗКИ ФОТО ${processedPhotos}/${totalPhotos}\n\n${errorMessage}\n\n${processedPhotos < totalPhotos ? 'Продолжаем с остальными фото...' : ''}`);
                 }
             }
             
