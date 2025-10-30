@@ -334,7 +334,30 @@ class Store {
                 console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА! Попытка удалить все данные!');
                 console.error('🚨 В localStorage есть', localData.pets.length, 'питомцев');
                 console.error('🚨 СОХРАНЕНИЕ ОТМЕНЕНО!');
-                alert('ОШИБКА: Попытка сохранить пустую базу данных! Сохранение отменено для защиты данных.');
+                alert(`🚨 ЗАЩИТА ОТ ПОТЕРИ ДАННЫХ!\n\nВы пытаетесь сохранить ПУСТУЮ базу данных!\n\nНо в резервной копии есть ${localData.pets.length} карточек.\n\n✅ Сохранение ОТМЕНЕНО для защиты ваших данных.\n\n💡 Если вы действительно хотите удалить все карточки:\n1. Сначала используйте кнопку "Восстановить данные"\n2. Затем удалите карточки по одной`);
+                return false;
+            }
+            
+            // Проверяем экстренную резервную копию
+            const emergencyBackup = localStorage.getItem('pitomnik_emergency_backup');
+            if (emergencyBackup) {
+                try {
+                    const emergency = JSON.parse(emergencyBackup);
+                    if (emergency.pets && emergency.pets.length > 0) {
+                        console.error('🚨 КРИТИЧЕСКАЯ ОШИБКА! Попытка удалить все данные!');
+                        console.error('🚨 В экстренной копии есть', emergency.pets.length, 'питомцев');
+                        console.error('🚨 СОХРАНЕНИЕ ОТМЕНЕНО!');
+                        alert(`🚨 ЗАЩИТА ОТ ПОТЕРИ ДАННЫХ!\n\nВы пытаетесь сохранить ПУСТУЮ базу данных!\n\nНо в экстренной копии есть ${emergency.pets.length} карточек.\n\n✅ Сохранение ОТМЕНЕНО для защиты ваших данных.\n\n💡 Используйте кнопку "🚑 ВОССТАНОВИТЬ ДАННЫЕ" в правом верхнем углу!`);
+                        return false;
+                    }
+                } catch (e) {
+                    console.error('Ошибка проверки экстренной копии:', e);
+                }
+            }
+            
+            // Если нигде нет данных - показываем последнее предупреждение
+            if (!confirm('⚠️ ВНИМАНИЕ!\n\nВы собираетесь сохранить ПУСТУЮ базу данных (0 карточек).\n\nЭто удалит ВСЕ карточки с сервера!\n\nВы УВЕРЕНЫ?')) {
+                console.log('❌ Сохранение пустой базы отменено пользователем');
                 return false;
             }
         }
@@ -1094,6 +1117,31 @@ function showDataStatus() {
         document.body.appendChild(statusIndicator);
     }
     
+    // Проверяем наличие экстренной копии
+    const hasEmergencyBackup = localStorage.getItem('pitomnik_emergency_backup') !== null;
+    let emergencyInfo = '';
+    
+    if (petsCount === 0 && hasEmergencyBackup) {
+        try {
+            const emergency = JSON.parse(localStorage.getItem('pitomnik_emergency_backup'));
+            const emergencyPetsCount = emergency.pets ? emergency.pets.length : 0;
+            
+            if (emergencyPetsCount > 0) {
+                emergencyInfo = `
+                    <div style="margin-top: 10px; padding: 8px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px;">
+                        <div style="font-weight: bold; color: #856404; margin-bottom: 5px;">⚠️ Данные потеряны!</div>
+                        <div style="font-size: 10px; color: #856404; margin-bottom: 5px;">Найдена копия: ${emergencyPetsCount} карточек</div>
+                        <button onclick="emergencyRestore()" style="width: 100%; padding: 4px; font-size: 11px; background: #ff5722; color: white; border: none; border-radius: 3px; cursor: pointer; font-weight: bold;">
+                            🚑 ВОССТАНОВИТЬ ДАННЫЕ
+                        </button>
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.error('Ошибка проверки резервной копии:', e);
+        }
+    }
+    
     statusIndicator.innerHTML = `
         <div style="font-weight: bold; margin-bottom: 5px;">📊 Статус данных</div>
         <div>🐕 Питомцев: ${petsCount}</div>
@@ -1105,6 +1153,7 @@ function showDataStatus() {
         <button onclick="realtimeSync.forceSync()" style="margin-top: 5px; padding: 2px 6px; font-size: 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
             🔄 Синхронизировать
         </button>
+        ${emergencyInfo}
     `;
     
     // Скрываем через 10 секунд
