@@ -1150,8 +1150,11 @@ function showDataStatus() {
         <div id="syncStatus" style="margin-top: 5px; font-size: 10px; color: ${isGitHub ? '#28a745' : '#ffc107'};">
             ${isGitHub ? '🔄 GitHub Sync (все видят)' : '💾 Локально (только этот браузер)'}
         </div>
-        <button onclick="realtimeSync.forceSync()" style="margin-top: 5px; padding: 2px 6px; font-size: 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer;">
+        <button onclick="realtimeSync.forceSync()" style="margin-top: 5px; padding: 2px 6px; font-size: 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; width: 100%;">
             🔄 Синхронизировать
+        </button>
+        <button onclick="dbExport()" style="margin-top: 5px; padding: 2px 6px; font-size: 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; width: 100%;">
+            💾 Экспорт (Резервная копия)
         </button>
         ${emergencyInfo}
     `;
