@@ -1153,9 +1153,14 @@ function showDataStatus() {
         <button onclick="realtimeSync.forceSync()" style="margin-top: 5px; padding: 2px 6px; font-size: 10px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; width: 100%;">
             🔄 Синхронизировать
         </button>
-        <button onclick="dbExport()" style="margin-top: 5px; padding: 2px 6px; font-size: 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer; width: 100%;">
-            💾 Экспорт (Резервная копия)
-        </button>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 5px;">
+            <button onclick="dbExport()" style="padding: 2px 6px; font-size: 10px; background: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">
+                💾 Экспорт
+            </button>
+            <button onclick="importData()" style="padding: 2px 6px; font-size: 10px; background: #ffc107; color: #333; border: none; border-radius: 3px; cursor: pointer; font-weight: 600;">
+                📥 Импорт
+            </button>
+        </div>
         ${emergencyInfo}
     `;
     
@@ -2096,22 +2101,81 @@ function setupAdminFunctions(){
             if (!file) return;
             
             try {
+                console.log('📥 Начинаем импорт из файла:', file.name);
                 const text = await file.text();
                 const data = JSON.parse(text);
                 
-                if (data.users && data.pets) {
-                    db.users = data.users;
-                    db.petsData = data.pets;
-                    await db.saveUsers();
-                    await db.savePets();
-                    loadPets();
-                    alert('Данные успешно импортированы!');
-                } else {
-                    alert('Неверный формат файла!');
+                console.log('📊 Данные из файла:', {
+                    users: Object.keys(data.users || {}).length,
+                    pets: (data.pets || []).length
+                });
+                
+                if (!data.users || !data.pets) {
+                    alert('❌ ОШИБКА ИМПОРТА!\n\nНеверный формат файла!\n\nФайл должен содержать:\n- users (пользователи)\n- pets (питомцы)');
+                    // Очищаем input для повторного выбора
+                    e.target.value = '';
+                    return;
                 }
+                
+                // Показываем информацию и запрашиваем подтверждение
+                const currentPets = db.petsData.length;
+                const importPets = data.pets.length;
+                
+                const confirmMessage = `📥 ИМПОРТ ДАННЫХ\n\n` +
+                    `Текущее состояние:\n` +
+                    `🐕 Питомцев: ${currentPets}\n` +
+                    `👥 Пользователей: ${Object.keys(db.users).length}\n\n` +
+                    `Из файла будет импортировано:\n` +
+                    `🐕 Питомцев: ${importPets}\n` +
+                    `👥 Пользователей: ${Object.keys(data.users).length}\n\n` +
+                    `⚠️ ВНИМАНИЕ! Текущие данные будут ЗАМЕНЕНЫ!\n\n` +
+                    `Продолжить импорт?`;
+                
+                if (!confirm(confirmMessage)) {
+                    console.log('❌ Импорт отменен пользователем');
+                    // Очищаем input
+                    e.target.value = '';
+                    return;
+                }
+                
+                // Импортируем данные
+                console.log('✅ Импортируем данные...');
+                db.users = data.users;
+                db.petsData = data.pets;
+                
+                // Обновляем snapshot
+                window.lastKnownGoodData = {
+                    users: JSON.parse(JSON.stringify(db.users)),
+                    pets: JSON.parse(JSON.stringify(db.petsData)),
+                    timestamp: Date.now()
+                };
+                console.log('💾 Snapshot обновлен после импорта');
+                
+                // Экстренный бэкап
+                db._emergencyBackup();
+                
+                // Сохраняем в GitHub и localStorage
+                await db.saveUsers();
+                await db.savePets();
+                
+                // Обновляем отображение
+                loadPets();
+                
+                // Очищаем input для возможности повторного выбора того же файла
+                e.target.value = '';
+                
+                console.log('✅ Импорт завершен успешно!');
+                alert(`✅ ИМПОРТ УСПЕШЕН!\n\n` +
+                    `Импортировано:\n` +
+                    `🐕 ${importPets} карточек питомцев\n` +
+                    `👥 ${Object.keys(data.users).length} пользователей\n\n` +
+                    `✅ Данные сохранены на GitHub!`);
+                
             } catch (error) {
-                console.error('Ошибка импорта:', error);
-                alert('Ошибка при импорте данных: ' + error.message);
+                console.error('❌ Ошибка импорта:', error);
+                alert(`❌ ОШИБКА ИМПОРТА!\n\n${error.message}\n\nПроверьте что файл:\n• Не поврежден\n• В формате JSON\n• Создан через кнопку "Экспорт"`);
+                // Очищаем input
+                e.target.value = '';
             }
         });
     }
