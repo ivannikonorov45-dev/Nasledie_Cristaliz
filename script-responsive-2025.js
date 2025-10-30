@@ -1144,8 +1144,8 @@ function setupModals(){
             totalSize += file.size;
             
             // Проверяем формат файла
-            const fileName = file.name.toLowerCase();
-            const fileType = file.type.toLowerCase();
+            const fileName = file.name ? file.name.toLowerCase() : '';
+            const fileType = file.type ? file.type.toLowerCase() : '';
             
             // Проверяем на HEIC/HEIF
             if (fileName.endsWith('.heic') || fileName.endsWith('.heif') || fileType.includes('heic') || fileType.includes('heif')) {
@@ -1420,8 +1420,10 @@ async function savePet(){
                     console.log('📊', progressText);
                     
                     // Проверяем, является ли файл изображением
-                    if (!file.type.startsWith('image/') && !file.name.match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/i)) {
-                        throw new Error(`Файл "${file.name}" не является изображением`);
+                    const fileType = file.type || '';
+                    const fileName = file.name || '';
+                    if (!fileType.startsWith('image/') && !fileName.match(/\.(jpg|jpeg|png|gif|webp|heic|heif)$/i)) {
+                        throw new Error(`Файл "${fileName}" не является изображением`);
                     }
                     
                     // Проверяем размер файла
