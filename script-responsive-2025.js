@@ -539,6 +539,13 @@ class RealtimeSync {
     }
     
     async forceSync() {
+        // 🔒 БЕЗОПАСНОСТЬ: Только администратор может синхронизировать!
+        if (!isAdmin) {
+            console.warn('⚠️ Попытка синхронизации без прав администратора');
+            this.showNotification('Синхронизация доступна только администратору', 'error');
+            return;
+        }
+        
         console.log('🔄 Принудительная синхронизация...');
         const currentData = { users: db.users, pets: db.petsData };
         console.log('📊 Текущие данные для синхронизации:', {
@@ -1090,6 +1097,16 @@ function updateUserInterface(){
 
 // Функция показа статуса данных
 function showDataStatus() {
+    // 🔒 БЕЗОПАСНОСТЬ: Панель видна ТОЛЬКО администратору!
+    if (!isAdmin) {
+        // Удаляем панель если она есть (пользователь вышел из админки)
+        const existingPanel = document.getElementById('dataStatus');
+        if (existingPanel) {
+            existingPanel.remove();
+        }
+        return; // Гости не видят панель!
+    }
+    
     const petsCount = db.getAllPets().length;
     const usersCount = Object.keys(db.users || {}).length;
     const isGitHub = store.useCloud && store.github;
@@ -1931,12 +1948,28 @@ function swapPrimaryMedia(petId, src, type){ const el=document.getElementById('v
 function setupAdminFunctions(){
     // Функции для админа
     window.dbExport = function(){
+        // 🔒 БЕЗОПАСНОСТЬ: Только администратор может экспортировать данные!
+        if (!isAdmin) {
+            console.warn('⚠️ Попытка экспорта без прав администратора');
+            alert('🔒 ДОСТУП ЗАПРЕЩЕН!\n\nЭкспорт данных доступен только администратору.\n\nВойдите в систему как Admin.');
+            return;
+        }
+        
         const data = { users: db.users, pets: db.getAllPets(), exportDate: new Date().toISOString() };
         const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
         const url = URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`pitomnik_backup_${new Date().toISOString().split('T')[0]}.json`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+        console.log('✅ Экспорт выполнен администратором:', currentUser);
     };
     
-    window.importData = function(){ document.getElementById('importFile').click(); };
+    window.importData = function(){ 
+        // 🔒 БЕЗОПАСНОСТЬ: Только администратор может импортировать данные!
+        if (!isAdmin) {
+            console.warn('⚠️ Попытка импорта без прав администратора');
+            alert('🔒 ДОСТУП ЗАПРЕЩЕН!\n\nИмпорт данных доступен только администратору.\n\nВойдите в систему как Admin.');
+            return;
+        }
+        document.getElementById('importFile').click(); 
+    };
     
     // Функция восстановления из localStorage
     window.restoreFromLocalStorage = async function(){
